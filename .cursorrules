@@ -1,0 +1,75 @@
+# Chrono Lite Project Rules
+
+## Instructions
+
+During your interaction with the user, if you find anything reusable in this project (e.g. version of a library, model name), especially about a fix to a mistake you made or a correction you received, you should take note in the `Lessons` section in the `.cursorrules` file so you will not make the same mistake again. 
+
+You should also use the `.cursorrules` file as a Scratchpad to organize your thoughts. Especially when you receive a new task, you should first review the content of the Scratchpad, clear old different task if necessary, first explain the task, and plan the steps you need to take to complete the task.
+
+## Lessons
+
+### User Specified Lessons
+
+- You have a python venv in ./venv. Always use (activate) it when doing python development. First, to check whether 'uv' is available, use `which uv`. If that's the case, first activate the venv, and then use `uv pip install` to install packages. Otherwise, fall back to `pip`.
+- Due to Cursor's limit, when you use `git` and `gh` and need to submit a multiline commit message, first write the message in a file, and then use `git commit -F <filename>` or similar command to commit. And then remove the file. Include "[Cursor] " in the commit message and PR title.
+
+### Project Specific Lessons
+
+- **Product Form Factor**: Chrono Lite is a Gmail Add-on (plugin), not a script that users manually run. All functionality should be described as UI-based interactions through the Gmail sidebar, not as "running functions in Apps Script editor".
+- **User Interaction Pattern**: Users interact with the plugin through:
+  - Gmail sidebar UI cards and buttons
+  - Automatic triggers (time-based, event-based)
+  - UI-initiated actions (not manual script execution)
+
+## Scratchpad
+
+### Current Task: Document Consistency Update (2025-10-14)
+
+**Task Description**: Update Chrono-Lite-Complete-Design.md to maintain consistency with the product form factor (Gmail Add-on/plugin). Remove all references to manual script execution and replace with UI-based interactions.
+
+**Plan**:
+[X] Task 1: Identify all inconsistencies where document mentions manual script operations
+[X] Task 2: Update architecture section to reflect UI-first design
+[X] Task 3: Update "批量历史处理" section to describe UI-triggered batch cleanup
+[X] Task 4: Update "自动化工作流" section to describe UI-based automation setup
+[X] Task 5: Update user journey sections to show UI interactions
+[X] Task 6: Add clarifications to "开发者超能力" section about UI triggers
+[X] Task 7: Update SaaS comparison table
+
+**Changes Made**:
+
+1. **Architecture Section (Line 123-125)**:
+   - ❌ Removed: "Apps Script 编辑器（配置 + 日志）"
+   - ✅ Updated to: "Gmail 侧边栏（插件交互界面 + 设置）"
+
+2. **Trigger Layer (Line 149-151)**:
+   - ❌ Removed: "手动触发（用户运行函数）"
+   - ✅ Updated to: "UI 触发（侧边栏按钮操作）"
+
+3. **批量历史处理 Usage Scenario (Line 307-315)**:
+   - ❌ Removed: "用户在 Apps Script 编辑器运行 massCleanupHistory()"
+   - ✅ Updated to: Multi-step UI flow with range selection and progress display
+
+4. **自动化工作流设置 (Line 364-377)**:
+   - ❌ Removed: Manual trigger setup instructions in Apps Script editor
+   - ✅ Updated to: UI-based automation mode selection (智能/激进/保守)
+
+5. **用户旅程 - 阶段 2 (Line 747-790)**:
+   - ❌ Removed: Direct function execution "运行 massCleanupHistory()"
+   - ✅ Updated to: Detailed UI interaction flow with sidebar buttons and progress visualization
+
+6. **开发者模式超能力 (Line 400-467)**:
+   - ✅ Added: Explanation that advanced features are triggered via sidebar UI
+   - ✅ Added: Specific trigger methods for each "superpower" (侧边栏 → 高级设置 → 按钮)
+
+7. **SaaS 功能对比 (Line 2064)**:
+   - ❌ Removed: "手动脚本"
+   - ✅ Updated to: "UI操作处理"
+
+**Key Principle**: 
+The product is a Gmail Add-on where users interact through UI elements in the Gmail sidebar. Advanced users CAN access Apps Script editor to customize, but the default interaction model is UI-based, not script-based.
+
+**Status**: ✅ COMPLETED
+
+All inconsistencies have been resolved. The document now consistently describes Chrono Lite as a Gmail Add-on with UI-based interactions.
+

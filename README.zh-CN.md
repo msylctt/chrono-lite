@@ -2,7 +2,8 @@
 
 <div align="center">
 
-<img src="./assets/logo-200.png" alt="Chrono Lite Logo" width="200"/>
+<!-- TODO: 添加 logo -->
+<!-- <img src="./assets/logo.png" alt="Chrono Lite Logo" width="200"/> -->
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![clasp](https://img.shields.io/badge/built%20with-clasp-4285f4.svg)](https://github.com/google/clasp)

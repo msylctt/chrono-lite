@@ -54,4 +54,5 @@ CLAUDE.md
 .specify/
 
 # Documentation (development only)
-docs/
+# Note: User-facing docs (installation.md, user-guide.md, etc.) are kept in git
+docs/implementation/

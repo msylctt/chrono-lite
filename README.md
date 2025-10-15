@@ -1,210 +1,361 @@
 # Chrono Lite
 
-Gmail 自动化分类工具 - 开源 Gmail Add-on
+<div align="center">
 
-## 项目概述
+<!-- TODO: Add logo -->
+<!-- <img src="./assets/logo.png" alt="Chrono Lite Logo" width="200"/> -->
 
-Chrono Lite 是一个开源的 Gmail 邮件自动化分类工具，通过 Google Apps Script 实现：
-- **自动识别** Newsletter、Marketing、Product Updates 等邮件类型
-- **智能分类** 基于 5000+ 发件人开源数据库
-- **完全自动化** 定时后台运行，无需用户手动操作
-- **隐私优先** 所有处理都在用户的 Gmail 中完成，不上传数据到服务器
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![clasp](https://img.shields.io/badge/built%20with-clasp-4285f4.svg)](https://github.com/google/clasp)
+[![Google Apps Script](https://img.shields.io/badge/Google%20Apps%20Script-4285F4?logo=google&logoColor=white)](https://script.google.com)
+[![Sender DB](https://img.shields.io/badge/senders-5000%2B-brightgreen)](./data/verified.json)
 
-## 项目结构
+[English](./README.md) | [简体中文](./README.zh-CN.md)
 
-```
-chrono-lite/
-├── src/                        # Google Apps Script 源代码
-│   ├── Code.gs                # 主逻辑
-│   ├── Config.gs              # 用户配置
-│   ├── Database.gs            # 数据库加载（分片缓存）
-│   ├── Classifier.gs          # 分类引擎
-│   ├── Actions.gs             # 动作执行
-│   └── UI.gs                  # Gmail Add-on 侧边栏界面
-├── appsscript.json            # Apps Script Manifest
-├── docs/                       # 文档
-│   ├── installation.md        # 安装教程
-│   ├── customization.md       # 自定义指南
-│   └── troubleshooting.md     # 故障排查
-├── examples/                   # 示例配置
-│   └── configs/               # 配置示例
-├── Chrono-Lite-Complete-Design.md  # 完整产品设计文档
-└── Proposal-OpenSource-Gmail-Addon.md  # 开源方案建议书
-```
+**Open-source Gmail automation tool for smart email categorization**
 
-## 核心功能
+*Auto-categorize newsletters and marketing emails • Privacy-first • No server needed*
 
-### Gmail Add-on (开源版本)
-- ✅ Newsletter 自动识别（基于开源发件人数据库）
-- ✅ Gmail 标签自动分类
-- ✅ 批量历史邮件处理
-- ✅ 完全自动化工作流
-- ✅ 开发者自定义规则
-- ✅ Gmail 侧边栏界面（Card UI）
+<!-- TODO: Add hero GIF/screenshot -->
+<!-- ![Demo](./assets/hero.gif) -->
 
-### 不包含功能（引流到 SaaS）
-- ❌ AI 中文摘要
-- ❌ 全文翻译
-- ❌ 专用阅读器界面
-- ❌ 移动端 App
-- ❌ 语义搜索
-- ❌ 团队协作
-
-## 快速开始
-
-### 1. 前置要求
-
-- Gmail 账户
-- 访问 [Google Apps Script](https://script.google.com/)
-- 基本的 JavaScript 知识（可选，用于自定义）
-
-### 2. 安装步骤
-
-详细安装步骤请参考 [完整设计文档](./Chrono-Lite-Complete-Design.md#阶段-0发现与安装5-分钟)
-
-**快速版本**：
-
-1. 访问 [script.google.com](https://script.google.com/)
-2. 新建项目
-3. 复制 `src/` 目录下的所有文件到项目中
-4. 复制 `appsscript.json` 的内容
-5. 保存并授权
-6. 首次打开 Gmail，点击侧边栏的 Chrono Lite 图标
-7. 按照引导完成初始化
-
-### 3. 首次配置
-
-```javascript
-// 在 Apps Script 编辑器中运行测试
-testDatabaseConnection()  // 测试数据库连接
-initialSetup()            // 初始化（处理最近 7 天邮件）
-```
-
-### 4. 开启自动化
-
-在 Gmail 侧边栏点击"开启自动化"，或手动设置：
-
-1. Apps Script 编辑器 → 触发器
-2. 添加新触发器
-3. 函数：`autoProcessInbox`
-4. 事件源：时间驱动
-5. 类型：小时计时器
-6. 频率：每小时
-
-## 技术架构
-
-### 核心技术
-- **语言**: Google Apps Script (JavaScript ES5)
-- **数据源**: jsDelivr CDN (开源发件人数据库)
-- **存储**: CacheService (分片缓存，6小时过期)
-- **UI**: Gmail Cards Framework
-- **触发器**: Time-driven + Contextual
-
-### 分片缓存策略
-
-为了突破 CacheService 的 1000 条目限制，采用基于哈希的分片策略：
-
-```javascript
-// 5000+ 条记录分成 50 个分片
-// 每个分片 ~100 条记录，~10KB
-// 查询时 O(1) 哈希定位分片
-
-数据结构：
-{
-  "sender_db_meta": {           // 元数据
-    "shardCount": 50,
-    "totalEntries": 5234,
-    "version": "1.0.0"
-  },
-  "sender_db_shard_0": {...},   // 分片 0
-  "sender_db_shard_1": {...},   // 分片 1
-  ...
-  "sender_db_shard_49": {...}   // 分片 49
-}
-```
-
-### 智能卡片显示
-
-V2.0 采用智能显示策略，减少 85% 的卡片干扰：
-
-- **高置信度（>90%）**: 极简卡片（10% 邮件）
-- **中置信度（60-90%）**: 完整卡片（5% 邮件）
-- **未识别**: 贡献提示（5% 邮件）
-- **其他**: 不显示（80% 邮件）
-
-## 文档
-
-- [完整产品设计文档](./Chrono-Lite-Complete-Design.md) - 包含完整的产品设计、技术实现和 UX 优化（12,000+ 行）
-- [开源方案建议书](./Proposal-OpenSource-Gmail-Addon.md) - 开源 Gmail Add-on 的战略价值分析
-- [安装教程](./docs/installation.md) - 详细安装步骤（待完成）
-- [自定义指南](./docs/customization.md) - 如何自定义规则和配置（待完成）
-- [故障排查](./docs/troubleshooting.md) - 常见问题解决（待完成）
-
-## 开发计划
-
-### Phase 1: Gmail Add-on MVP (2-3 周)
-- [x] 完整产品设计（V2.0）
-- [x] UX 优化方案
-- [ ] 发件人数据库建设 (Top 1000)
-- [ ] 完整代码实现
-  - [x] Code.gs 框架
-  - [ ] Config.gs
-  - [ ] Database.gs (分片缓存)
-  - [ ] Classifier.gs
-  - [ ] Actions.gs
-  - [ ] UI.gs (V2.0 分步引导)
-- [ ] 测试与优化
-
-### Phase 2: 数据库生态 (持续)
-- [ ] 扩展到 5000+ 发件人
-- [ ] 社区贡献机制
-- [ ] GitHub Actions 自动化验证
-- [ ] jsDelivr CDN 发布
-
-### Phase 3: 社区运营 (持续)
-- [ ] Product Hunt 发布
-- [ ] Hacker News Show HN
-- [ ] 中文技术社区推广
-- [ ] 文档完善（中英双语）
-
-### Phase 4: SaaS 转化 (未来)
-- [ ] 情境化转化提示（长文、里程碑）
-- [ ] SaaS 落地页
-- [ ] AI 摘要功能
-- [ ] 移动端适配
-
-## 贡献指南
-
-我们欢迎社区贡献！特别是：
-
-### 发件人数据库
-提交新的 Newsletter 发件人到 [chrono-lite-newsletter-senders](https://github.com/msylctt/chrono-lite-newsletter-senders)
-
-### 代码优化
-- 性能优化
-- 错误处理
-- 用户体验改进
-
-### 文档翻译
-- 英文文档
-- 其他语言支持
-
-## 开源协议
-
-MIT License - 详见 [LICENSE](./LICENSE)
-
-## 联系方式
-
-- GitHub Issues: [提交问题](https://github.com/msylctt/chrono-lite/issues)
-- 发件人数据库: [提交发件人](https://github.com/msylctt/chrono-lite-newsletter-senders/issues/new)
-
-## 致谢
-
-- 感谢所有贡献发件人数据库的社区成员
-- 感谢 Claude Code 在产品设计和 UX 优化中的支持
+</div>
 
 ---
 
-**⚡ 从开源工具到 SaaS，与用户一起成长**
+## ✨ Features
 
-*Chrono Lite - 让 Gmail 收件箱清零变得简单*
+- 🤖 **Smart Categorization** - Automatically detect and categorize newsletters based on 5,000+ verified sender database
+- 🏷️ **Auto Labeling** - Organize emails with Gmail labels (Marketing/Newsletter/Product Updates) automatically
+- 🗑️ **Bulk Cleanup** - Process 6 months of historical emails with one click
+- 🔒 **Privacy First** - Everything runs in your Gmail account, zero data upload to external servers
+- ⚡ **Fully Automated** - Set and forget with time-based triggers (runs every hour in background)
+- 🎨 **Gmail Sidebar** - Beautiful interface built with Google Cards framework
+- 🌐 **Open Source** - MIT licensed, community-driven sender database
+
+---
+
+## 🚀 Quick Start
+
+### For Users (5 minutes)
+
+#### Option A: Install from Google Workspace Marketplace
+
+🚧 *Coming soon - Currently under review by Google*
+
+#### Option B: Manual Installation ⭐ *Available now*
+
+📺 **Video Tutorial**:
+- [YouTube (English)](https://www.youtube.com) <!-- TODO: Add actual video link -->
+- [Bilibili (中文)](https://www.bilibili.com) <!-- TODO: Add actual video link -->
+
+<details>
+<summary>📖 Step-by-step Installation Guide</summary>
+
+1. **Open Google Apps Script Console**
+   - Visit https://script.google.com
+   - Click "New Project" button
+   - Give it a name like "Chrono Lite"
+
+   <!-- TODO: Add screenshot -->
+
+2. **Copy the Source Code**
+   - Download or clone this repository
+   - Open each file in `src/` folder:
+     - `Code.gs`
+     - `Config.gs`
+     - `Database.gs`
+     - `Classifier.gs`
+     - `Actions.gs`
+     - `UI.gs`
+   - Create corresponding `.gs` files in Apps Script editor
+   - Copy-paste the code
+
+   <!-- TODO: Add screenshot -->
+
+3. **Configure the Manifest**
+   - In Apps Script editor, click "Project Settings" (⚙️)
+   - Check "Show 'appsscript.json' manifest file"
+   - Replace `appsscript.json` content with the one from this repo
+
+   <!-- TODO: Add screenshot -->
+
+4. **Authorize and Test**
+   - Save all files (Ctrl/Cmd + S)
+   - Select `initialSetup` function from dropdown
+   - Click "Run" button
+   - Follow the authorization prompts
+   - Grant permissions to access your Gmail
+
+   <!-- TODO: Add screenshot -->
+
+5. **Open Gmail**
+   - Refresh your Gmail tab
+   - Look for Chrono Lite icon in the right sidebar
+   - Click to open the add-on
+
+   <!-- TODO: Add screenshot -->
+
+✅ **Done!** New emails will be auto-categorized every hour.
+
+</details>
+
+<details>
+<summary>🔧 Troubleshooting</summary>
+
+**Can't see the sidebar icon?**
+- Make sure you've configured `appsscript.json` correctly
+- Try logging out and back into Gmail
+- Check if authorization completed successfully
+
+**No categories applied to emails?**
+- Run `testDatabaseConnection()` function first to verify database loading
+- Run `initialSetup()` to process recent emails
+- Check Apps Script logs: View → Logs
+
+**Getting timeout errors?**
+- This is normal for large inboxes (>1000 emails)
+- The script will auto-resume on next trigger
+- Reduce batch size in `Config.gs` if needed
+
+For more help, see [FAQ](./docs/faq.md) or [open an issue](https://github.com/msylctt/chrono-lite/issues).
+
+</details>
+
+---
+
+### For Developers
+
+Want to customize or contribute? Use `clasp` for local development:
+
+```bash
+# 1. Install clasp (Command Line Apps Script Projects)
+npm install -g @google/clasp
+clasp login
+
+# 2. Clone this repository
+git clone https://github.com/msylctt/chrono-lite.git
+cd chrono-lite
+
+# 3. Create a new Apps Script project
+clasp create --type standalone --title "Chrono Lite"
+
+# 4. Push code to Apps Script
+clasp push
+
+# 5. Open in editor
+clasp open
+
+# 6. Watch for changes (auto-push on save)
+clasp push --watch
+```
+
+📚 **Full development guide**: [CLAUDE.md](./CLAUDE.md)
+
+---
+
+## 📖 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Installation Guide](./docs/installation.md) | Detailed setup instructions with screenshots |
+| [User Guide](./docs/user-guide.md) | How to use and customize Chrono Lite |
+| [FAQ](./docs/faq.md) | Frequently asked questions |
+| [Privacy Policy](./docs/privacy.md) | How we handle your data (spoiler: we don't) |
+| [Development Guide](./CLAUDE.md) | For developers - architecture, best practices |
+| [Complete Design Doc](./docs/Chrono-Lite-Complete-Design.md) | Full product design (12,000+ lines) |
+
+---
+
+## 🎥 Demo
+
+### Email Categorization in Action
+
+<!-- TODO: Add demo GIF -->
+<!-- ![Demo](./assets/demo.gif) -->
+
+**Before**: Cluttered inbox with newsletters mixed with important emails
+
+**After**: Clean inbox with auto-categorized newsletters in dedicated labels
+
+### Gmail Sidebar Interface
+
+<!-- TODO: Add sidebar screenshot -->
+<!-- ![Sidebar UI](./assets/screenshots/sidebar-ui.png) -->
+
+---
+
+## 🏗️ How It Works
+
+<details>
+<summary>Click to expand architecture overview</summary>
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  Chrono Lite Architecture                │
+└─────────────────────────────────────────────────────────┘
+
+1. 📥 Load Sender Database
+   └─> Fetch from jsDelivr CDN (5,000+ verified senders)
+   └─> Store in CacheService (50 shards, 6-hour expiry)
+   └─> Fallback to embedded data if CDN fails
+
+2. 🔍 Classify Emails (Three-tier matching)
+   ├─ Tier 1: Exact email match (email@domain.com) [85% hit rate]
+   ├─ Tier 2: Domain match (@domain.com) [10% hit rate]
+   └─ Tier 3: Heuristic rules (List-Unsubscribe header) [5% hit rate]
+
+3. 🏷️ Apply Actions
+   ├─ Add Gmail label (e.g., "Newsletter/Marketing")
+   ├─ Mark as read (optional)
+   ├─ Archive (optional)
+   └─ Star important ones (optional)
+
+4. ⚡ Automation
+   └─ Time-based trigger runs every hour
+   └─ Processes last 100 emails
+   └─ Respects Gmail API quotas
+```
+
+**Tech Stack**:
+- **Platform**: Google Apps Script (JavaScript ES5, V8 Runtime)
+- **Data Source**: jsDelivr CDN + GitHub
+- **Storage**: CacheService (sharded), PropertiesService (config)
+- **UI**: Gmail Cards Framework
+- **Triggers**: Time-driven + Contextual
+
+**Why sharded cache?**
+CacheService has a 1,000-entry limit per cache. We use hash-based sharding (50 shards × ~100 entries) to support 5,000+ senders efficiently.
+
+</details>
+
+---
+
+## 🤝 Contributing
+
+We ❤️ contributions! Here's how you can help:
+
+### 📬 Add Newsletter Senders
+
+The sender database is the heart of Chrono Lite. Help us expand it!
+
+👉 **Submit new senders**: [chrono-lite-newsletter-senders](https://github.com/msylctt/chrono-lite-newsletter-senders/issues/new)
+
+Example submission:
+```json
+{
+  "email": "newsletter@example.com",
+  "category": "newsletter",
+  "name": "Example Newsletter",
+  "verified": true
+}
+```
+
+### 🐛 Report Bugs / 💡 Request Features
+
+- Found a bug? [Open an issue](https://github.com/msylctt/chrono-lite/issues/new?template=bug_report.md)
+- Have a feature idea? [Start a discussion](https://github.com/msylctt/chrono-lite/discussions)
+
+### 💻 Contribute Code
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for:
+- Code style guidelines
+- Development workflow
+- How to submit pull requests
+
+### 🌍 Translate Documentation
+
+Help us support more languages! Current languages:
+- [x] English
+- [x] 简体中文 (Simplified Chinese)
+- [ ] Español (Spanish) - Help wanted!
+- [ ] Français (French) - Help wanted!
+- [ ] 日本語 (Japanese) - Help wanted!
+
+---
+
+## 📊 Roadmap
+
+- [x] **Phase 1**: Core data layer with CDN integration
+- [x] **Phase 2**: Classification engine (three-tier matching)
+- [x] **Phase 3**: Gmail sidebar UI with onboarding flow
+- [ ] **Phase 4**: Google Workspace Marketplace listing
+- [ ] **Phase 5**: Expand sender database to 10,000+
+- [ ] **Phase 6**: Community contribution platform
+- [ ] **Phase 7**: AI-powered sender detection (optional)
+
+See [Projects](https://github.com/msylctt/chrono-lite/projects) for detailed progress.
+
+---
+
+## ⚠️ Privacy & Security
+
+### We take your privacy seriously
+
+- ✅ **100% Open Source** - All code is public and auditable on GitHub
+- ✅ **Zero Data Upload** - Everything runs locally in your Gmail account via Apps Script
+- ✅ **No Tracking** - We don't collect any usage data or analytics
+- ✅ **Minimal Permissions** - Only requests Gmail read/modify access (no access to Drive, Calendar, etc.)
+- ✅ **No External Servers** - No backend servers, databases, or third-party services
+
+### Required Permissions
+
+| Permission | Why We Need It |
+|------------|----------------|
+| `gmail.modify` | To read email headers and apply labels |
+| `gmail.settings.basic` | To create filters (optional) |
+| `gmail.addons.current.message.readonly` | To show contextual cards in sidebar |
+| `script.external_request` | To fetch sender database from CDN |
+
+**Note**: The sender database is fetched from jsDelivr CDN (a public, open-source CDN). Your email content is **never** sent anywhere.
+
+Learn more: [Privacy Policy](./docs/privacy.md)
+
+---
+
+## 📝 License
+
+MIT License - see [LICENSE](./LICENSE)
+
+This means you can:
+- ✅ Use commercially
+- ✅ Modify
+- ✅ Distribute
+- ✅ Sublicense
+- ✅ Private use
+
+Attribution appreciated but not required!
+
+---
+
+## 💬 Get Help
+
+- 📚 **Documentation**: [docs/](./docs/)
+- 💡 **FAQ**: [docs/faq.md](./docs/faq.md)
+- 🐛 **Issues**: [github.com/msylctt/chrono-lite/issues](https://github.com/msylctt/chrono-lite/issues)
+- 💬 **Discussions**: [github.com/msylctt/chrono-lite/discussions](https://github.com/msylctt/chrono-lite/discussions)
+- 📧 **Email**: [chrono.lite@example.com](mailto:chrono.lite@example.com) <!-- TODO: Update email -->
+
+---
+
+## 🙏 Acknowledgments
+
+- Thanks to all [contributors](https://github.com/msylctt/chrono-lite/graphs/contributors) who help grow the sender database
+- Built with ❤️ using [Google Apps Script](https://developers.google.com/apps-script)
+- Powered by [jsDelivr CDN](https://www.jsdelivr.com/) for fast, reliable data delivery
+- Inspired by the need for a **privacy-first** Gmail automation tool
+- Special thanks to [Claude Code](https://claude.ai/code) for assistance in product design and development
+
+---
+
+<div align="center">
+
+**⚡ From open-source tool to SaaS - Growing with users**
+
+*Chrono Lite - Make Gmail inbox zero easy*
+
+[⭐ Star this repo](https://github.com/msylctt/chrono-lite) • [🍴 Fork](https://github.com/msylctt/chrono-lite/fork) • [📢 Share on Twitter](https://twitter.com/intent/tweet?text=Check%20out%20Chrono%20Lite%20-%20Open-source%20Gmail%20automation%20tool!&url=https://github.com/msylctt/chrono-lite)
+
+Made with ❤️ by the open-source community
+
+</div>

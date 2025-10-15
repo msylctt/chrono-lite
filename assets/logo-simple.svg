@@ -1,0 +1,18 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#4285F4"/>
+  
+  <!-- Clock face outline -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#ffffff" stroke-width="12"/>
+  
+  <!-- Clock center dot -->
+  <circle cx="256" cy="256" r="16" fill="#ffffff"/>
+  
+  <!-- Clock hands (pointing to 2 o'clock) -->
+  <line x1="256" y1="256" x2="256" y2="140" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+  <line x1="256" y1="256" x2="320" y2="200" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+  
+  <!-- Envelope symbol at bottom -->
+  <rect x="220" y="320" width="72" height="48" rx="6" fill="none" stroke="#ffffff" stroke-width="8"/>
+  <polyline points="220,340 256,370 292,340" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

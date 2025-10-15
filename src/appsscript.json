@@ -15,7 +15,7 @@
   "addOns": {
     "common": {
       "name": "Chrono Lite",
-      "logoUrl": "https://www.gstatic.com/images/branding/product/1x/keep_48dp.png",
+      "logoUrl": "https://raw.githubusercontent.com/msylctt/chrono-lite/main/assets/icons/icon-48.png",
       "useLocaleFromApp": true,
       "homepageTrigger": {
         "runFunction": "buildHomepage"

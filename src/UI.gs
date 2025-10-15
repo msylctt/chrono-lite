@@ -45,12 +45,12 @@ function onGmailMessageOpen(e) {
   var result = classifyEmail(message);
 
   if (result) {
-    // 智能显示策略：根据置信度决定卡片样式
-    if (result.confidence >= 0.9) {
-      // 高置信度：极简卡片
+    // 智能显示策略：精确匹配显示极简卡片，其他显示完整卡片
+    if (result.source === 'database_exact') {
+      // 精确匹配：极简卡片
       return buildMinimalClassifiedCard(message, result);
     } else {
-      // 中低置信度：完整卡片（需要确认）
+      // 域名匹配或规则匹配：完整卡片（需要确认）
       return buildClassifiedCard(message, result);
     }
   } else {
@@ -133,6 +133,7 @@ function buildOnboardingCard() {
 function buildDashboardCard() {
   var stats = getEmailStats();
   var triggerStatus = getTriggerStatus();
+  var debugStatus = getDebugModeStatus();
 
   var card = CardService.newCardBuilder()
     .setHeader(CardService.newCardHeader()
@@ -152,6 +153,14 @@ function buildDashboardCard() {
 
     .addWidget(statusWidget));
 
+  // Debug 模式状态
+  if (debugStatus.enabled) {
+    var debugWidget = buildDebugStatusWidget(debugStatus);
+    card = card.addSection(CardService.newCardSection()
+      .setHeader('🐛 Debug 模式')
+      .addWidget(debugWidget));
+  }
+
   card = card
     // 统计信息
     .addSection(CardService.newCardSection()
@@ -165,14 +174,7 @@ function buildDashboardCard() {
       .addWidget(CardService.newKeyValue()
         .setTopLabel('Newsletter 未读')
         .setContent(stats.newsletterUnread + ' 封')
-        .setIcon(CardService.Icon.BOOKMARK))
-
-      .addWidget(CardService.newDecoratedText()
-        .setText('查看分类邮件')
-        .setButton(CardService.newTextButton()
-          .setText('打开')
-          .setOpenLink(CardService.newOpenLink()
-            .setUrl('https://mail.google.com/#label/Chrono/Newsletter')))))
+        .setIcon(CardService.Icon.BOOKMARK)))
 
     // 快速操作
     .addSection(CardService.newCardSection()
@@ -182,6 +184,16 @@ function buildDashboardCard() {
         .setText('🔄 手动同步收件箱')
         .setOnClickAction(CardService.newAction()
           .setFunctionName('manualSync')))
+
+      .addWidget(CardService.newTextButton()
+        .setText('🤖 触发自动扫描 (Debug)')
+        .setOnClickAction(CardService.newAction()
+          .setFunctionName('triggerAutoProcess')))
+
+      .addWidget(CardService.newTextButton()
+        .setText(debugStatus.enabled ? '🐛 关闭 Debug 模式' : '🐛 开启 Debug 模式')
+        .setOnClickAction(CardService.newAction()
+          .setFunctionName(debugStatus.enabled ? 'disableDebugMode' : 'enableDebugMode')))
 
       .addWidget(CardService.newTextButton()
         .setText('📥 更新发件人数据库')
@@ -314,10 +326,10 @@ function buildSyncResultCard(processed, total, categoryStats, processedEmails, s
 
   card.addSection(statsSection);
 
-  // 处理详情（包含置信度）
+  // 处理详情
   if (processedEmails && processedEmails.length > 0) {
     var detailsText = processedEmails.slice(0, 10).map(function(item) {
-      return '• ' + item.category + ' (' + item.confidence + '): ' + item.subject;
+      return '• ' + item.category + ' (' + item.method + '): ' + item.subject;
     }).join('<br>');
 
     if (processedEmails.length > 10) {
@@ -356,7 +368,7 @@ function buildSyncResultCard(processed, total, categoryStats, processedEmails, s
  */
 
 /**
- * 极简分类卡片（高置信度 >90%）
+ * 极简分类卡片（精确匹配）
  */
 function buildMinimalClassifiedCard(message, result) {
   var senderEmail = extractEmail(message.getFrom());
@@ -368,13 +380,9 @@ function buildMinimalClassifiedCard(message, result) {
 
     .addSection(CardService.newCardSection()
       .addWidget(CardService.newKeyValue()
-        .setTopLabel('置信度')
-        .setContent((result.confidence * 100).toFixed(0) + '%')
-        .setIcon(CardService.Icon.STAR))
-
-      .addWidget(CardService.newKeyValue()
         .setTopLabel('匹配方式')
-        .setContent(getSourceLabel(result.source))))
+        .setContent(getSourceLabel(result.source))
+        .setIcon(CardService.Icon.STAR)))
 
     .addSection(CardService.newCardSection()
       .addWidget(CardService.newTextParagraph()
@@ -386,7 +394,7 @@ function buildMinimalClassifiedCard(message, result) {
 }
 
 /**
- * 完整分类卡片（中低置信度，需要确认）
+ * 完整分类卡片（域名匹配或规则匹配，需要确认）
  */
 function buildClassifiedCard(message, result) {
   var senderEmail = extractEmail(message.getFrom());
@@ -407,10 +415,6 @@ function buildClassifiedCard(message, result) {
         .setTopLabel('识别分类')
         .setContent(result.category)
         .setIcon(CardService.Icon.BOOKMARK))
-
-      .addWidget(CardService.newKeyValue()
-        .setTopLabel('置信度')
-        .setContent((result.confidence * 100).toFixed(0) + '%'))
 
       .addWidget(CardService.newKeyValue()
         .setTopLabel('匹配方式')
@@ -764,9 +768,9 @@ function manualSync(e) {
         // 详细日志
         if (result) {
           Logger.log((index + 1) + '. ' + senderEmail + ' → ' + result.category +
-                    ' (置信度: ' + (result.confidence * 100).toFixed(0) + '%, ' + result.method + ')');
+                    ' (' + result.method + ')');
 
-          // 无置信度限制，处理所有能分类的邮件
+          // 处理所有能分类的邮件
           applyCategory(thread, result.category);
           processed++;
 
@@ -782,7 +786,7 @@ function manualSync(e) {
             category: result.category,
             subject: subject,
             from: senderEmail,
-            confidence: (result.confidence * 100).toFixed(0) + '%'
+            method: result.method
           });
         } else {
           unclassified++;
@@ -861,9 +865,38 @@ function clearTestLabelsFromUI(e) {
 
     clearTestLabels();
 
+    // 构建结果卡片，提示用户刷新
+    var card = CardService.newCardBuilder()
+      .setHeader(CardService.newCardHeader()
+        .setTitle('✅ 清理完成')
+        .setSubtitle('所有 Chrono 标签已移除'))
+
+      .addSection(CardService.newCardSection()
+        .addWidget(CardService.newTextParagraph()
+          .setText('<b>已完成操作：</b><br>' +
+                  '• 删除所有 Chrono 标签<br>' +
+                  '• 从邮件中移除标签<br><br>' +
+                  '<font color="#e67e22"><b>💡 重要提示：</b></font><br>' +
+                  '<font color="#e67e22">请刷新 Gmail 页面以查看更新</font>')))
+
+      .addSection(CardService.newCardSection()
+        .addWidget(CardService.newTextParagraph()
+          .setText('<font color="#666666">刷新方法：按 Cmd/Ctrl + R<br>' +
+                  '或点击浏览器刷新按钮</font>')))
+
+      .addSection(CardService.newCardSection()
+        .addWidget(CardService.newTextButton()
+          .setText('← 返回主页')
+          .setOnClickAction(CardService.newAction()
+            .setFunctionName('goToDashboard'))))
+
+      .build();
+
     return CardService.newActionResponseBuilder()
       .setNotification(CardService.newNotification()
-        .setText('✅ 已清理所有 Chrono 标签'))
+        .setText('✅ 已清理所有 Chrono 标签，请刷新 Gmail 页面'))
+      .setNavigation(CardService.newNavigation()
+        .updateCard(card))
       .build();
 
   } catch (error) {
@@ -877,6 +910,94 @@ function clearTestLabelsFromUI(e) {
 }
 
 /**
+ * 触发自动处理（Debug 用）
+ */
+function triggerAutoProcess(e) {
+  try {
+    Logger.log('🤖 手动触发自动处理...');
+
+    // 直接调用自动处理函数
+    autoProcessInbox();
+
+    // 获取处理结果
+    var userProps = PropertiesService.getUserProperties();
+    var lastProcessed = userProps.getProperty('chrono_last_processed') || '0';
+
+    return CardService.newActionResponseBuilder()
+      .setNotification(CardService.newNotification()
+        .setText('✅ 自动扫描完成！处理 ' + lastProcessed + ' 封邮件'))
+      .setNavigation(CardService.newNavigation()
+        .updateCard(buildDashboardCard()[0]))
+      .build();
+
+  } catch (error) {
+    Logger.log('❌ 自动处理失败: ' + error.message);
+
+    return CardService.newActionResponseBuilder()
+      .setNotification(CardService.newNotification()
+        .setText('❌ 自动扫描失败：' + error.message))
+      .build();
+  }
+}
+
+/**
+ * 启用 Debug 模式
+ */
+function enableDebugMode(e) {
+  try {
+    Logger.log('🐛 启用 Debug 模式...');
+
+    // 创建 Debug 触发器
+    createDebugEmailTrigger();
+
+    // 立即发送一封测试邮件
+    sendDebugTestEmail();
+
+    return CardService.newActionResponseBuilder()
+      .setNotification(CardService.newNotification()
+        .setText('✅ Debug 模式已启用！已发送首封测试邮件'))
+      .setNavigation(CardService.newNavigation()
+        .updateCard(buildDashboardCard()[0]))
+      .build();
+
+  } catch (error) {
+    Logger.log('❌ 启用 Debug 模式失败: ' + error.message);
+
+    return CardService.newActionResponseBuilder()
+      .setNotification(CardService.newNotification()
+        .setText('❌ 启用失败：' + error.message))
+      .build();
+  }
+}
+
+/**
+ * 禁用 Debug 模式
+ */
+function disableDebugMode(e) {
+  try {
+    Logger.log('🐛 禁用 Debug 模式...');
+
+    // 删除 Debug 触发器
+    deleteDebugEmailTrigger();
+
+    return CardService.newActionResponseBuilder()
+      .setNotification(CardService.newNotification()
+        .setText('✅ Debug 模式已关闭'))
+      .setNavigation(CardService.newNavigation()
+        .updateCard(buildDashboardCard()[0]))
+      .build();
+
+  } catch (error) {
+    Logger.log('❌ 禁用 Debug 模式失败: ' + error.message);
+
+    return CardService.newActionResponseBuilder()
+      .setNotification(CardService.newNotification()
+        .setText('❌ 禁用失败：' + error.message))
+      .build();
+  }
+}
+
+/**
  * 打开设置页面
  */
 function openSettings(e) {
@@ -884,6 +1005,7 @@ function openSettings(e) {
   var userProps = PropertiesService.getUserProperties();
   var processDays = userProps.getProperty('chrono_process_days') || '7';
   var processLimit = userProps.getProperty('chrono_process_limit') || '20';
+  var triggerInterval = userProps.getProperty('chrono_trigger_interval') || '1hour';
 
   // 获取数据库元数据
   var meta = getCacheMeta();
@@ -909,6 +1031,33 @@ function openSettings(e) {
         .setText('查看分类列表')
         .setOnClickAction(CardService.newAction()
           .setFunctionName('viewCategories'))))
+
+    // 自动化触发器设置
+    .addSection(CardService.newCardSection()
+      .setHeader('⏰ 自动化运行周期')
+
+      .addWidget(CardService.newTextParagraph()
+        .setText('<font color="#666666">设置自动扫描邮件的频率<br>' +
+                '<font color="#e67e22">⚠️ Gmail Add-on 限制：最小间隔 1 小时</font></font>'))
+
+      .addWidget(CardService.newSelectionInput()
+        .setType(CardService.SelectionInputType.DROPDOWN)
+        .setTitle('运行频率')
+        .setFieldName('trigger_interval')
+        .addItem('每小时（推荐）', '1hour', triggerInterval === '1hour')
+        .addItem('每 2 小时', '2hour', triggerInterval === '2hour')
+        .addItem('每 4 小时', '4hour', triggerInterval === '4hour')
+        .addItem('每 6 小时', '6hour', triggerInterval === '6hour')
+        .addItem('每 12 小时', '12hour', triggerInterval === '12hour')
+        .addItem('每天', '24hour', triggerInterval === '24hour'))
+
+      .addWidget(CardService.newTextButton()
+        .setText('💾 保存并重启触发器')
+        .setOnClickAction(CardService.newAction()
+          .setFunctionName('saveTriggerInterval')))
+
+      .addWidget(CardService.newTextParagraph()
+        .setText('<font color="#666666">💡 提示：使用"触发自动扫描"按钮可立即执行</font>')))
 
     // 处理范围配置
     .addSection(CardService.newCardSection()
@@ -1019,6 +1168,41 @@ function viewCategories(e) {
     .setNavigation(CardService.newNavigation()
       .pushCard(card))
     .build();
+}
+
+/**
+ * 保存触发器周期
+ */
+function saveTriggerInterval(e) {
+  try {
+    var formInput = e.formInput;
+    var triggerInterval = formInput.trigger_interval;
+
+    var userProps = PropertiesService.getUserProperties();
+    userProps.setProperty('chrono_trigger_interval', triggerInterval);
+
+    Logger.log('保存触发器周期: ' + triggerInterval);
+
+    // 重新创建触发器
+    createAutoProcessTrigger(triggerInterval);
+
+    var intervalLabel = getIntervalLabel(triggerInterval);
+
+    return CardService.newActionResponseBuilder()
+      .setNotification(CardService.newNotification()
+        .setText('✅ 触发器已更新为' + intervalLabel))
+      .setNavigation(CardService.newNavigation()
+        .updateCard(buildDashboardCard()[0]))
+      .build();
+
+  } catch (error) {
+    Logger.log('保存触发器周期失败: ' + error.message);
+
+    return CardService.newActionResponseBuilder()
+      .setNotification(CardService.newNotification()
+        .setText('❌ 保存失败：' + error.message))
+      .build();
+  }
 }
 
 /**
@@ -1190,6 +1374,28 @@ function buildTriggerStatusWidget(status) {
   return CardService.newTextParagraph()
     .setText('<font color="#666666">' + status.message + '<br>' +
             nextRunText + lastRunText + '</font>');
+}
+
+/**
+ * 构建 Debug 模式状态显示控件
+ */
+function buildDebugStatusWidget(debugStatus) {
+  var statusText = '✅ 每小时自动发送测试邮件';
+
+  if (debugStatus.lastEmail) {
+    var lastEmailDate = new Date(debugStatus.lastEmail);
+    statusText += '<br>上次发送: ' + formatRelativeTime(lastEmailDate);
+  }
+
+  if (debugStatus.enabledAt) {
+    var enabledDate = new Date(debugStatus.enabledAt);
+    statusText += '<br>启用时间: ' + formatRelativeTime(enabledDate);
+  }
+
+  statusText += '<br><br><font color="#e67e22">💡 观察收件箱中的 [Test] 邮件，检查是否自动归类</font>';
+
+  return CardService.newTextParagraph()
+    .setText('<font color="#666666">' + statusText + '</font>');
 }
 
 /**

@@ -27,10 +27,9 @@ function extractEmail(fromString) {
 function classifyByExactMatch(email) {
   var result = querySender(email);
 
-  if (result && result.confidence_score >= 0.8) {
+  if (result) {
     return {
       category: result.category,
-      confidence: result.confidence_score,
       source: 'database_exact',
       method: 'exact_match'
     };
@@ -65,7 +64,6 @@ function classifyByDomain(email) {
     if (result) {
       var cachedResult = {
         category: result.category,
-        confidence: Math.max(0.6, result.confidence_score * 0.8),
         source: 'database_domain',
         method: 'domain_match'
       };
@@ -93,7 +91,6 @@ function classifyByHeuristics(message) {
     if (unsubscribeHeader) {
       return {
         category: 'Newsletter',
-        confidence: 0.6,
         source: 'heuristic',
         method: 'list_unsubscribe_header'
       };
@@ -115,7 +112,6 @@ function classifyByHeuristics(message) {
     if (from.includes(newsletterPlatforms[i])) {
       return {
         category: 'Newsletter',
-        confidence: 0.65,
         source: 'heuristic',
         method: 'platform_domain'
       };
@@ -136,7 +132,6 @@ function classifyByHeuristics(message) {
     if (subjectLower.includes(newsletterKeywords[i])) {
       return {
         category: 'Newsletter',
-        confidence: 0.55,
         source: 'heuristic',
         method: 'subject_keyword'
       };
@@ -147,7 +142,6 @@ function classifyByHeuristics(message) {
   if (subject.match(/sale|discount|offer|deal|促销|优惠/i)) {
     return {
       category: 'Marketing',
-      confidence: 0.5,
       source: 'heuristic',
       method: 'marketing_keyword'
     };
@@ -217,8 +211,8 @@ function classifyBatch(messages) {
     var m = metadata[i];
     var exactResult = exactResults[m.email];
 
-    // 如果精确匹配失败或置信度不足
-    if (!exactResult || exactResult.confidence_score < 0.8) {
+    // 如果精确匹配失败
+    if (!exactResult) {
       needDomainMatch.push(i);
 
       // 生成域名匹配查询
@@ -277,11 +271,10 @@ function classifyBatch(messages) {
     var exactResult = exactResults[m.email];
 
     // Level 1: 精确匹配
-    if (exactResult && exactResult.confidence_score >= 0.8) {
+    if (exactResult) {
       results.push({
         message: msg,
         category: exactResult.category,
-        confidence: exactResult.confidence_score,
         source: 'database_exact',
         method: 'exact_match'
       });
@@ -298,7 +291,6 @@ function classifyBatch(messages) {
           results.push({
             message: msg,
             category: dr.category,
-            confidence: Math.max(0.6, dr.confidence_score * 0.8),
             source: 'database_domain',
             method: 'domain_match'
           });
@@ -315,7 +307,6 @@ function classifyBatch(messages) {
       results.push({
         message: msg,
         category: heuristicResult.category,
-        confidence: heuristicResult.confidence,
         source: 'heuristic',
         method: heuristicResult.method
       });
@@ -344,7 +335,6 @@ function applyBatchHeuristics(metadata) {
   if (unsubscribe) {
     return {
       category: 'Newsletter',
-      confidence: 0.6,
       method: 'list_unsubscribe_header'
     };
   }
@@ -362,7 +352,6 @@ function applyBatchHeuristics(metadata) {
     if (from.includes(newsletterPlatforms[i])) {
       return {
         category: 'Newsletter',
-        confidence: 0.65,
         method: 'platform_domain'
       };
     }
@@ -382,7 +371,6 @@ function applyBatchHeuristics(metadata) {
     if (subjectLower.includes(newsletterKeywords[j])) {
       return {
         category: 'Newsletter',
-        confidence: 0.55,
         method: 'subject_keyword'
       };
     }
@@ -392,7 +380,6 @@ function applyBatchHeuristics(metadata) {
   if (subject.match(/sale|discount|offer|deal|促销|优惠/i)) {
     return {
       category: 'Marketing',
-      confidence: 0.5,
       method: 'marketing_keyword'
     };
   }
@@ -465,7 +452,7 @@ function testClassificationAccuracy() {
       stats.byCategory[result.category] = (stats.byCategory[result.category] || 0) + 1;
 
       Logger.log('✅ ' + from);
-      Logger.log('   → ' + result.category + ' (' + (result.confidence * 100).toFixed(0) + '%, ' + result.method + ')');
+      Logger.log('   → ' + result.category + ' (' + result.method + ')');
     } else {
       stats.bySource.unclassified++;
       Logger.log('❌ ' + from + ' (未分类)');

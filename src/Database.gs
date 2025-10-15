@@ -16,22 +16,21 @@ const NUM_SHARDS = 50;               // 默认分片数（约每片 ~100 条）
  * 从 CDN 加载数据库
  */
 function loadSenderDatabaseFromCDN() {
-  Logger.log('📥 从 CDN 加载数据库...');
-  var startTime = new Date();
+  var op = Log.operation(Log.Module.DATABASE, 'loadSenderDatabaseFromCDN');
 
   try {
+    Log.debug(Log.Module.DATABASE, 'Fetching from CDN', {url: SENDER_DB_URL});
+
     var response = UrlFetchApp.fetch(SENDER_DB_URL, {
       muteHttpExceptions: true,
       validateHttpsCertificates: true
     });
 
     if (response.getResponseCode() !== 200) {
-      throw new Error('CDN 返回错误: ' + response.getResponseCode());
+      throw new Error('CDN returned error: ' + response.getResponseCode());
     }
 
     var data = JSON.parse(response.getContentText());
-    var endTime = new Date();
-    var duration = endTime - startTime;
 
     var count = 0;
     if (data && data.senders) {
@@ -42,20 +41,21 @@ function loadSenderDatabaseFromCDN() {
       }
     }
 
-    Logger.log('✅ CDN 数据库加载成功');
-    Logger.log('  - 版本: ' + (data.version || '未知'));
-    Logger.log('  - 条目数: ' + count);
-    Logger.log('  - 耗时: ' + duration + 'ms');
-
     // 标准化结构：确保包含 total_entries
     if (!data.total_entries && data.senders) {
       data.total_entries = count;
     }
 
+    op.success({
+      source: 'cdn',
+      version: data.version || 'unknown',
+      entries: count
+    });
+
     return data;
 
   } catch (error) {
-    Logger.log('❌ CDN 加载失败: ' + error.message);
+    op.fail(error, {url: SENDER_DB_URL});
     return null;
   }
 }
@@ -115,61 +115,82 @@ function shardDatabase(senders, numShards) {
  * 将分片存储到缓存
  */
 function storeShardedDatabase() {
+  var op = Log.operation(Log.Module.DATABASE, 'storeShardedDatabase');
+
   var lock = LockService.getScriptLock();
   try {
     lock.waitLock(10 * 1000); // 最长等待 10s
   } catch (e) {
-    Logger.log('⚠️ 获取锁失败，可能有并发刷新正在进行: ' + e.message);
+    Log.warn(Log.Module.DATABASE, 'Lock acquisition failed, concurrent refresh may be in progress', {
+      error: e.message
+    });
   }
 
-  Logger.log('💾 开始分片存储');
-  var startTime = new Date();
-  var cache = CacheService.getScriptCache();
+  try {
+    var cache = CacheService.getScriptCache();
 
-  // 1) 加载数据库
-  var db = loadSenderDatabase();
-  if (!db || !db.senders) {
-    Logger.log('❌ 无法加载数据库');
+    // 1) 加载数据库
+    var db = loadSenderDatabase();
+    if (!db || !db.senders) {
+      throw new Error('Database load failed or empty');
+    }
+
+    var senders = db.senders;
+    var shardCount = chooseShardCount(db);
+
+    Log.debug(Log.Module.DATABASE, 'Sharding database', {
+      total_entries: Object.keys(senders).length,
+      shard_count: shardCount
+    });
+
+    // 2) 分片
+    var shards = shardDatabase(senders, shardCount);
+
+    // 3) 存储每个分片
+    var shardIds = Object.keys(shards);
+    var totalSize = 0;
+
+    for (var i = 0; i < shardIds.length; i++) {
+      var shardId = shardIds[i];
+      var key = CACHE_SHARD_PREFIX + shardId;
+      var value = JSON.stringify(shards[shardId]);
+      var sizeKB = value.length / 1024;
+      totalSize += sizeKB;
+
+      cache.put(key, value, CACHE_DURATION);
+
+      Log.debug(Log.Module.DATABASE, 'Stored shard', {
+        shard_id: shardId,
+        entries: Object.keys(shards[shardId]).length,
+        size_kb: sizeKB.toFixed(2)
+      });
+    }
+
+    // 4) 存储元数据
+    var metadata = {
+      version: db.version || 'unknown',
+      shardCount: shardIds.length,
+      totalEntries: db.total_entries || Object.keys(senders).length,
+      lastUpdated: new Date().toISOString()
+    };
+    cache.put(CACHE_META_KEY, JSON.stringify(metadata), CACHE_DURATION);
+
     try { lock.releaseLock(); } catch (e2) { /* ignore */ }
+
+    op.success({
+      shard_count: shardIds.length,
+      total_entries: metadata.totalEntries,
+      total_size_kb: totalSize.toFixed(2),
+      version: metadata.version
+    });
+
+    return metadata;
+
+  } catch (error) {
+    try { lock.releaseLock(); } catch (e2) { /* ignore */ }
+    op.fail(error, {});
     return null;
   }
-
-  var senders = db.senders;
-  var shardCount = chooseShardCount(db);
-
-  // 2) 分片
-  Logger.log('🔨 分片数据...');
-  var shards = shardDatabase(senders, shardCount);
-
-  // 3) 存储每个分片
-  Logger.log('💾 存储分片到缓存...');
-  var shardIds = Object.keys(shards);
-  for (var i = 0; i < shardIds.length; i++) {
-    var shardId = shardIds[i];
-    var key = CACHE_SHARD_PREFIX + shardId;
-    var value = JSON.stringify(shards[shardId]);
-    var sizeKB = (value.length / 1024).toFixed(2);
-    Logger.log('  - Shard ' + shardId + ': ' + Object.keys(shards[shardId]).length + ' 条, ' + sizeKB + ' KB');
-    cache.put(key, value, CACHE_DURATION);
-  }
-
-  // 4) 存储元数据
-  var metadata = {
-    version: db.version || 'unknown',
-    shardCount: shardIds.length,
-    totalEntries: db.total_entries || Object.keys(senders).length,
-    lastUpdated: new Date().toISOString()
-  };
-  cache.put(CACHE_META_KEY, JSON.stringify(metadata), CACHE_DURATION);
-
-  var duration = new Date() - startTime;
-  Logger.log('✅ 分片存储完成');
-  Logger.log('  - 分片数: ' + shardIds.length);
-  Logger.log('  - 总条目: ' + metadata.totalEntries);
-  Logger.log('  - 耗时: ' + duration + 'ms');
-
-  try { lock.releaseLock(); } catch (e2) { /* ignore */ }
-  return metadata;
 }
 
 /**
@@ -187,8 +208,8 @@ function getCacheMeta() {
 function ensureCacheInitialized() {
   var meta = getCacheMeta();
   if (!meta) {
-    Logger.log('ℹ️ 检测到缓存未初始化，正在构建...');
-    meta = storeShardedDatabase(); // 默认走 CDN，失败会回退测试
+    Log.info(Log.Module.DATABASE, 'Cache not initialized, building cache', {});
+    meta = storeShardedDatabase();
   }
   return meta;
 }
@@ -203,7 +224,7 @@ function querySender(email) {
   // 1) 确保缓存准备就绪
   var meta = ensureCacheInitialized();
   if (!meta || !meta.shardCount) {
-    Logger.log('⚠️ 无法获得有效元数据');
+    Log.warn(Log.Module.DATABASE, 'Invalid metadata, cannot query', {email: normalized});
     return null;
   }
 
@@ -217,11 +238,16 @@ function querySender(email) {
 
   // 若分片丢失，尝试重建一次
   if (!shardStr) {
-    Logger.log('⚠️ 分片缓存缺失: ' + shardKey + '，尝试重建缓存...');
+    Log.warn(Log.Module.DATABASE, 'Shard cache miss, rebuilding', {
+      shard_key: shardKey,
+      email: normalized
+    });
     storeShardedDatabase();
     shardStr = cache.get(shardKey);
     if (!shardStr) {
-      Logger.log('❌ 仍无法读取分片: ' + shardKey);
+      Log.error(Log.Module.DATABASE, 'Still cannot read shard after rebuild', {
+        shard_key: shardKey
+      });
       return null;
     }
   }

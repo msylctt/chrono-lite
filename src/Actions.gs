@@ -11,9 +11,12 @@ function getOrCreateLabel(labelName) {
   if (!label) {
     try {
       label = GmailApp.createLabel(labelName);
-      Logger.log('✅ 创建标签: ' + labelName);
+      Log.info(Log.Module.ACTION, 'Label created', {label_name: labelName});
     } catch (error) {
-      Logger.log('❌ 创建标签失败: ' + error.message);
+      Log.error(Log.Module.ACTION, 'Label creation failed', {
+        label_name: labelName,
+        error: error.message
+      });
       return null;
     }
   }
@@ -28,11 +31,14 @@ function applyCategory(thread, categoryName) {
   var config = CATEGORIES[categoryName];
 
   if (!config) {
-    Logger.log('⚠️ 未知分类: ' + categoryName);
+    Log.warn(Log.Module.ACTION, 'Unknown category', {category: categoryName});
     return false;
   }
 
   try {
+    var threadId = thread.getId();
+    var subject = thread.getFirstMessageSubject();
+
     // 1. 应用标签
     var label = getOrCreateLabel(config.label);
     if (label) {
@@ -49,17 +55,21 @@ function applyCategory(thread, categoryName) {
       thread.markRead();
     }
 
-    // 4. 添加星标
-    if (config.addStar) {
-      thread.addStar();
-    }
-
-    Logger.log('✅ 应用分类: ' + thread.getFirstMessageSubject() + ' → ' + categoryName);
+    Log.debug(Log.Module.ACTION, 'Category applied', {
+      thread_id: threadId,
+      category: categoryName,
+      label: config.label,
+      action: config.action || 'none',
+      mark_read: config.markRead || false
+    });
 
     return true;
 
   } catch (error) {
-    Logger.log('❌ 应用分类失败: ' + error.message);
+    Log.error(Log.Module.ACTION, 'Apply category failed', {
+      category: categoryName,
+      error: error.message
+    });
     return false;
   }
 }
@@ -101,9 +111,10 @@ function applyBatchCategories(threadsWithCategories) {
         thread.markRead();
       }
 
-      if (config.addStar) {
-        thread.addStar();
-      }
+      // 移除星标功能（GmailThread 对象没有此方法）
+      // if (config.addStar) {
+      //   thread.addStar();
+      // }
 
       stats.success++;
       stats.byCategory[category] = (stats.byCategory[category] || 0) + 1;

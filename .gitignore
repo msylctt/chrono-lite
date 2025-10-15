@@ -49,6 +49,7 @@ CLAUDE.md
 .cursorrules
 .claude/
 .specify/
+System-Design.md
 
 # Development documentation (keep user-facing docs)
 docs/implementation/

@@ -295,7 +295,7 @@ function loadSenderDatabase() {
   
   // 首次加载：从 CDN 下载
   try {
-    var url = 'https://cdn.jsdelivr.net/gh/msylctt/chrono-lite-newsletter-senders@latest/data/verified.json';
+    var url = 'https://cdn.jsdelivr.net/gh/msylctt/chrono-lite@latest/data/verified.json';
     var response = UrlFetchApp.fetch(url, {
       muteHttpExceptions: true,
       validateHttpsCertificates: true

@@ -1,51 +1,48 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-.venv/
-venv/
-ENV/
-env/
+# Google Apps Script / Clasp
+.clasp.json
+.claspignore
+.clasp/
+
+# Node.js / npm
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Environment variables
 .env
+.env.local
+.env.*.local
 
-# Next.js
-frontend/.next/
-frontend/out/
-frontend/build/
-frontend/dist/
-frontend/.env*.local
-frontend/node_modules/
-
-# IDEs
+# IDEs and editors
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 .DS_Store
+Thumbs.db
 
 # Logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
 # Claude Code specific files
 CLAUDE.md
@@ -53,6 +50,21 @@ CLAUDE.md
 .claude/
 .specify/
 
-# Documentation (development only)
-# Note: User-facing docs (installation.md, user-guide.md, etc.) are kept in git
+# Development documentation (keep user-facing docs)
 docs/implementation/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Test files
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Build artifacts
+build/
+dist/
+out/

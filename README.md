@@ -39,15 +39,10 @@
 
 ### For Users (5 minutes)
 
-#### Option A: Install from Google Workspace Marketplace
-
-🚧 *Coming soon - Currently under review by Google*
-
-#### Option B: Manual Installation ⭐ *Available now*
+#### Manual Installation ⭐ *Available now*
 
 📺 **Video Tutorial**:
-- [YouTube (English)](https://www.youtube.com) <!-- TODO: Add actual video link -->
-- [Bilibili (中文)](https://www.bilibili.com) <!-- TODO: Add actual video link -->
+- 🚧 *Coming soon - Video tutorials are work in progress*
 
 <details>
 <summary>📖 Step-by-step Installation Guide</summary>
@@ -274,19 +269,6 @@ Help us support more languages! Current languages:
 
 ---
 
-## 📊 Roadmap
-
-- [x] **Phase 1**: Core data layer with CDN integration
-- [x] **Phase 2**: Classification engine (three-tier matching)
-- [x] **Phase 3**: Gmail sidebar UI with onboarding flow
-- [ ] **Phase 4**: Google Workspace Marketplace listing
-- [ ] **Phase 5**: Expand sender database to 10,000+
-- [ ] **Phase 6**: Community contribution platform
-- [ ] **Phase 7**: AI-powered sender detection (optional)
-
-See [Projects](https://github.com/msylctt/chrono-lite/projects) for detailed progress.
-
----
 
 ## ⚠️ Privacy & Security
 
@@ -313,40 +295,8 @@ Learn more: [Privacy Policy](./docs/privacy.md)
 
 ---
 
-## 📝 License
 
-MIT License - see [LICENSE](./LICENSE)
 
-This means you can:
-- ✅ Use commercially
-- ✅ Modify
-- ✅ Distribute
-- ✅ Sublicense
-- ✅ Private use
-
-Attribution appreciated but not required!
-
----
-
-## 💬 Get Help
-
-- 📚 **Documentation**: [docs/](./docs/)
-- 💡 **FAQ**: [docs/faq.md](./docs/faq.md)
-- 🐛 **Issues**: [github.com/msylctt/chrono-lite/issues](https://github.com/msylctt/chrono-lite/issues)
-- 💬 **Discussions**: [github.com/msylctt/chrono-lite/discussions](https://github.com/msylctt/chrono-lite/discussions)
-- 📧 **Email**: [chrono.lite@example.com](mailto:chrono.lite@example.com) <!-- TODO: Update email -->
-
----
-
-## 🙏 Acknowledgments
-
-- Thanks to all [contributors](https://github.com/msylctt/chrono-lite/graphs/contributors) who help grow the sender database
-- Built with ❤️ using [Google Apps Script](https://developers.google.com/apps-script)
-- Powered by [jsDelivr CDN](https://www.jsdelivr.com/) for fast, reliable data delivery
-- Inspired by the need for a **privacy-first** Gmail automation tool
-- Special thanks to [Claude Code](https://claude.ai/code) for assistance in product design and development
-
----
 
 <div align="center">
 

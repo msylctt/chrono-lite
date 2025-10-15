@@ -1,7 +1,7 @@
 {
   "version": "test-1.0.0",
   "last_updated": "2025-10-14T12:00:00Z",
-  "total_entries": 60,
+  "total_entries": 62,
   "senders": {
     "newsletter@google.com": { "category": "Tech News" },
     "updates@apple.com": { "category": "Product Updates" },
@@ -65,7 +65,9 @@
     "newsletter@hey.com": { "category": "Newsletter" },
     "updates@nvidia.com": { "category": "Product Updates" },
     "newsletter@openai.com": { "category": "Tech News" },
-    "newsletter@anthropic.com": { "category": "Tech News" }
+    "newsletter@anthropic.com": { "category": "Tech News" },
+    "newsletter@stratechery.com": { "category": "Newsletter" },
+    "news@morningbrew.com": { "category": "Newsletter" }
   }
 }
 

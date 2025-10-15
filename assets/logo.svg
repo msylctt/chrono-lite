@@ -1,0 +1,24 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#4285F4" stroke="#ffffff" stroke-width="8"/>
+  
+  <!-- Clock face -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#ffffff" stroke-width="6"/>
+  
+  <!-- Clock center dot -->
+  <circle cx="256" cy="256" r="12" fill="#ffffff"/>
+  
+  <!-- Clock hands (pointing to 2 o'clock to suggest automation/processing) -->
+  <line x1="256" y1="256" x2="256" y2="140" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+  <line x1="256" y1="256" x2="320" y2="200" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- Envelope/mail symbol integrated into clock -->
+  <rect x="200" y="300" width="112" height="80" rx="8" fill="none" stroke="#ffffff" stroke-width="6"/>
+  <polyline points="200,320 256,360 312,320" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Small accent dots representing organized emails -->
+  <circle cx="180" cy="180" r="4" fill="#34A853"/>
+  <circle cx="332" cy="180" r="4" fill="#34A853"/>
+  <circle cx="180" cy="332" r="4" fill="#34A853"/>
+  <circle cx="332" cy="332" r="4" fill="#34A853"/>
+</svg>

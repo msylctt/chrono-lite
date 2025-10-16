@@ -163,24 +163,7 @@ function classifyByHeuristics(message) {
     }
   }
 
-  // 规则 2: Newsletter 平台域名
-  var newsletterPlatforms = [
-    'substack.com',
-    'beehiiv.com',
-    'convertkit.com',
-    'mailchimp.com',
-    'sendgrid.net'
-  ];
-
-  for (var i = 0; i < newsletterPlatforms.length; i++) {
-    if (from.includes(newsletterPlatforms[i])) {
-      return {
-        category: 'Newsletter',
-        source: 'heuristic',
-        method: 'platform_domain'
-      };
-    }
-  }
+  // 平台域名不作为直接分类依据（ESP 域名覆盖泛交易/营销），改由头部/内容/上下文综合判定
 
   // 规则 3: 主题关键词
   var newsletterKeywords = [
@@ -450,23 +433,7 @@ function applyBatchHeuristics(metadata) {
     }
   }
 
-  // 规则 2: Newsletter 平台域名
-  var newsletterPlatforms = [
-    'substack.com',
-    'beehiiv.com',
-    'convertkit.com',
-    'mailchimp.com',
-    'sendgrid.net'
-  ];
-
-  for (var i = 0; i < newsletterPlatforms.length; i++) {
-    if (from.includes(newsletterPlatforms[i])) {
-      return {
-        category: 'Newsletter',
-        method: 'platform_domain'
-      };
-    }
-  }
+  // 平台域名不作为直接分类依据（ESP 域名覆盖泛交易/营销），改由头部/内容/上下文综合判定
 
   // 规则 3: 主题关键词
   var newsletterKeywords = [

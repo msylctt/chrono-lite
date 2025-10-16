@@ -370,12 +370,22 @@ function classifyByHeuristics(message) {
 function classifyEmail(message) {
   var senderEmail = extractEmail(message.getFrom());
   var normalized = (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableSenderContext) ? normalizeEmail(senderEmail) : senderEmail;
+  var normDomain = (normalized && normalized.indexOf('@') !== -1) ? normalized.split('@')[1] : null;
 
   // Phase C: 信誉快速路径
   if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableReputation) {
     var repKey = normalized.split('@')[1] || normalized; // 优先按域名缓存
     var rep = readReputation(repKey);
     if (rep && rep.category) {
+      if (shouldLogSample()) {
+        Log.info(Log.Module.CLASSIFIER, 'classified (reputation)', {
+          layer: 'R0',
+          method: 'local_reputation',
+          category: rep.category,
+          sender: normalized,
+          domain: normDomain
+        });
+      }
       return {
         category: rep.category,
         source: 'reputation',
@@ -391,7 +401,9 @@ function classifyEmail(message) {
       Log.info(Log.Module.CLASSIFIER, 'classified (exact)', {
         layer: 'L1',
         method: exactResult.method,
-        category: exactResult.category
+        category: exactResult.category,
+        sender: normalized,
+        domain: normDomain
       });
     }
     return exactResult;
@@ -404,7 +416,9 @@ function classifyEmail(message) {
       Log.info(Log.Module.CLASSIFIER, 'classified (domain)', {
         layer: 'L2',
         method: domainResult.method,
-        category: domainResult.category
+        category: domainResult.category,
+        sender: normalized,
+        domain: normDomain
       });
     }
     return domainResult;
@@ -419,7 +433,9 @@ function classifyEmail(message) {
         method: heuristicResult.method,
         score: heuristicResult.score || 0,
         threshold: CLASSIFIER_THRESHOLD,
-        category: heuristicResult.category
+        category: heuristicResult.category,
+        sender: normalized,
+        domain: normDomain
       });
     }
     // 写回信誉（高置信度）
@@ -571,7 +587,9 @@ function classifyBatch(messages) {
       if (shouldLogSample()) {
         Log.debug(Log.Module.CLASSIFIER, 'classified (exact/batch)', {
           layer: 'L1',
-          category: exactResult.category
+          category: exactResult.category,
+          sender: m.email,
+          domain: m.domain
         });
       }
       continue;
@@ -604,7 +622,9 @@ function classifyBatch(messages) {
         if (shouldLogSample()) {
           Log.debug(Log.Module.CLASSIFIER, 'classified (domain/batch)', {
             layer: 'L2',
-            category: dr.category
+            category: dr.category,
+            sender: m.email,
+            domain: m.domain
           });
         }
           domainMatched = true;
@@ -627,7 +647,9 @@ function classifyBatch(messages) {
         Log.debug(Log.Module.CLASSIFIER, 'classified (heuristic/batch)', {
           layer: 'L3',
           method: heuristicResult.method,
-          category: heuristicResult.category
+          category: heuristicResult.category,
+          sender: m.email,
+          domain: m.domain
         });
       }
       // 写回信誉

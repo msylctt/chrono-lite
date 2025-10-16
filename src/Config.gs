@@ -57,6 +57,11 @@ const TEST_LABEL = 'Chrono/Test'; // 测试标签
 const TEST_EMAIL_COUNT = 10;       // 测试邮件数量
 
 /**
+ * 处理标记（避免重复扫描）
+ */
+const PROCESSED_LABEL = 'Chrono/Processed';
+
+/**
  * 分类器特性开关（渐进式发布）
  */
 const FEATURE_FLAGS = {

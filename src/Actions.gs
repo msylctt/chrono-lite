@@ -55,6 +55,12 @@ function applyCategory(thread, categoryName) {
       thread.markRead();
     }
 
+    // 4. 标记已处理，避免重复扫描
+    try {
+      var processed = getOrCreateLabel(PROCESSED_LABEL);
+      if (processed) thread.addLabel(processed);
+    } catch (e2) { /* ignore */ }
+
     Log.debug(Log.Module.ACTION, 'Category applied', {
       thread_id: threadId,
       category: categoryName,

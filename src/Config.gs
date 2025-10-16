@@ -113,3 +113,17 @@ const REPUTATION_CONFIG = {
   minScoreToCache: 15,     // 仅当决策分数≥该值时写入信誉
   maxEntries: 2000         // 软上限（未强制执行）
 };
+
+/**
+ * 内容层配置（轻量扫描）
+ */
+const CONTENT_CONFIG = {
+  footerScanBytes: 2048, // 扫描正文末尾 N 字节
+  unsubscribeWeight: 10, // 退订链接权重
+  keywordWeights: {
+    'unsubscribe': 10,
+    'manage preferences': 8,
+    'opt-out': 8,
+    'view in browser': 4
+  }
+};

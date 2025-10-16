@@ -324,6 +324,38 @@ function classifyByHeuristics(message) {
     };
   }
 
+  // Phase D: 内容层（轻量） - 扫描页脚退订
+  if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableContent) {
+    try {
+      var raw = message.getPlainBody ? message.getPlainBody() : (message.getBody ? message.getBody() : '');
+      if (raw) {
+        var slice = raw.substring(Math.max(0, raw.length - CONTENT_CONFIG.footerScanBytes));
+        var txt = (slice + '').toLowerCase();
+        var score = 0;
+        var kw = CONTENT_CONFIG.keywordWeights || {};
+        // 退订链接/关键字
+        for (var key in kw) {
+          if (kw.hasOwnProperty(key) && txt.indexOf(key) !== -1) {
+            score += kw[key];
+          }
+        }
+        // 简单的 unsubscribe 链接正则
+        if (/unsubscribe/i.test(txt)) {
+          score += CONTENT_CONFIG.unsubscribeWeight;
+        }
+        if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableScoring && score >= CLASSIFIER_THRESHOLD) {
+          return {
+            category: 'Newsletter',
+            source: 'heuristic',
+            method: 'content_footer',
+            score: score,
+            threshold: CLASSIFIER_THRESHOLD
+          };
+        }
+      }
+    } catch (eContent) { /* ignore */ }
+  }
+
   return null;
 }
 
@@ -480,6 +512,16 @@ function classifyBatch(messages) {
       try { metadata[idx].precedence = messages[idx].getHeader('Precedence'); } catch (e5) { metadata[idx].precedence = null; }
       try { metadata[idx].xSmtpapi = messages[idx].getHeader('X-SMTPAPI'); } catch (e6) { metadata[idx].xSmtpapi = null; }
       try { metadata[idx].xCampaignId = messages[idx].getHeader('X-Campaign-ID'); } catch (e7) { metadata[idx].xCampaignId = null; }
+      // Phase D: 仅在需要时读取页脚文本（纯文本体尾部）
+      try {
+        var body = messages[idx].getPlainBody ? messages[idx].getPlainBody() : (messages[idx].getBody ? messages[idx].getBody() : '');
+        if (body) {
+          var slice = body.substring(Math.max(0, body.length - CONTENT_CONFIG.footerScanBytes));
+          metadata[idx].footerText = slice;
+        } else {
+          metadata[idx].footerText = '';
+        }
+      } catch (e8) { metadata[idx].footerText = ''; }
     }
   }
 
@@ -574,6 +616,7 @@ function applyBatchHeuristics(metadata) {
   var xSmtpapi = metadata.xSmtpapi;
   var xCampaignId = metadata.xCampaignId;
   var domain = metadata.domain;
+  var footerText = metadata.footerText;
 
   // Phase A: 头部评分（批量路径下）
   if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableHeaders) {
@@ -653,6 +696,27 @@ function applyBatchHeuristics(metadata) {
       category: 'Marketing',
       method: 'marketing_keyword'
     };
+  }
+
+  // Phase D: 内容层（轻量） - 扫描页脚退订
+  if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableContent && footerText) {
+    var txt = (footerText + '').toLowerCase();
+    var scoreC = 0;
+    var kw = CONTENT_CONFIG.keywordWeights || {};
+    for (var key in kw) {
+      if (kw.hasOwnProperty(key) && txt.indexOf(key) !== -1) {
+        scoreC += kw[key];
+      }
+    }
+    if (/unsubscribe/i.test(txt)) {
+      scoreC += CONTENT_CONFIG.unsubscribeWeight;
+    }
+    if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableScoring && scoreC >= CLASSIFIER_THRESHOLD) {
+      return {
+        category: 'Newsletter',
+        method: 'content_footer'
+      };
+    }
   }
 
   return null;
@@ -817,7 +881,15 @@ function runPhase2Tests() {
         'Auto-Submitted': 'auto-replied'
       }),
       // 主题回退：无头部，主题含营销词
-      makeMockMessage('Store <promo@shop.example>', 'Big SALE today', { })
+      makeMockMessage('Store <promo@shop.example>', 'Big SALE today', { }),
+      // 内容页脚：包含 unsubscribe 链接关键词
+      (function(){
+        var body = 'Hello user,\n...\nIf you wish to unsubscribe, click here.';
+        var m = makeMockMessage('Footer <nl@brand.example>', 'Latest', {});
+        // monkey-patch body accessors for mock
+        m.getPlainBody = function(){ return body; };
+        return m;
+      })()
     ];
 
     var syntheticResults = syntheticMessages.map(function(m){ return classifyEmail(m); });

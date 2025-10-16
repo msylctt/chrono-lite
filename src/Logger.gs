@@ -81,19 +81,42 @@ var Log = (function() {
 
     // 便捷方法
     error: function(module, message, meta) {
+      // ERROR 始终输出
       log(Level.ERROR, module, message, meta);
     },
 
     warn: function(module, message, meta) {
-      log(Level.WARN, module, message, meta);
+      try {
+        var userLevel = (PropertiesService.getUserProperties().getProperty('chrono_log_level') || LOG_LEVEL || Level.INFO).toUpperCase();
+        if (userLevel === Level.DEBUG || userLevel === Level.INFO || userLevel === Level.WARN) {
+          log(Level.WARN, module, message, meta);
+        }
+      } catch (e) {
+        log(Level.WARN, module, message, meta);
+      }
     },
 
     info: function(module, message, meta) {
-      log(Level.INFO, module, message, meta);
+      try {
+        var userLevel = (PropertiesService.getUserProperties().getProperty('chrono_log_level') || LOG_LEVEL || Level.INFO).toUpperCase();
+        if (userLevel === Level.DEBUG || userLevel === Level.INFO) {
+          log(Level.INFO, module, message, meta);
+        }
+      } catch (e) {
+        log(Level.INFO, module, message, meta);
+      }
     },
 
     debug: function(module, message, meta) {
-      log(Level.DEBUG, module, message, meta);
+      try {
+        var userLevel = (PropertiesService.getUserProperties().getProperty('chrono_log_level') || LOG_LEVEL || Level.INFO).toUpperCase();
+        if (userLevel === Level.DEBUG) {
+          log(Level.DEBUG, module, message, meta);
+        }
+      } catch (e) {
+        // 回退为直接输出（在极少数异常下）
+        log(Level.DEBUG, module, message, meta);
+      }
     },
 
     // 性能计时器

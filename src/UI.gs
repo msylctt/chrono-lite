@@ -41,8 +41,11 @@ function onGmailMessageOpen(e) {
     return buildErrorCard('Unable to load email');
   }
 
-  // Classify email
+  // Classify email (UI-optimized): disable content scan to reduce latency
+  var original = FEATURE_FLAGS && FEATURE_FLAGS.enableContent;
+  try { if (FEATURE_FLAGS) FEATURE_FLAGS.enableContent = false; } catch (eFlag) {}
   var result = classifyEmail(message);
+  try { if (FEATURE_FLAGS) FEATURE_FLAGS.enableContent = original; } catch (eFlag2) {}
 
   if (result) {
     // Smart display strategy: exact match shows minimal card, others show full card
@@ -1496,16 +1499,36 @@ function refreshCard(e) {
  */
 function getEmailStats() {
   try {
-    return {
-      todayProcessed: GmailApp.search('newer_than:1d label:Chrono').length,
-      newsletterUnread: GmailApp.search('label:Chrono/Newsletter is:unread').length
-    };
+    var props = PropertiesService.getUserProperties();
+    var cacheKey = 'chrono_stats_cache_v1';
+    var ttlMs = 5 * 60 * 1000; // 5 minutes
+    var now = new Date().getTime();
+
+    // Read cache
+    var raw = props.getProperty(cacheKey);
+    if (raw) {
+      try {
+        var cached = JSON.parse(raw);
+        if (cached && cached.ts && (now - cached.ts) < ttlMs) {
+          return { todayProcessed: cached.todayProcessed || 0, newsletterUnread: cached.newsletterUnread || 0 };
+        }
+      } catch (e1) { /* ignore parse errors */ }
+    }
+
+    // Compute fresh stats
+    var todayProcessed = GmailApp.search('newer_than:1d label:Chrono').length;
+    var newsletterUnread = GmailApp.search('label:Chrono/Newsletter is:unread').length;
+
+    // Write cache
+    try {
+      props.setProperty(cacheKey, JSON.stringify({ ts: now, todayProcessed: todayProcessed, newsletterUnread: newsletterUnread }));
+    } catch (e2) { /* ignore set errors */ }
+
+    return { todayProcessed: todayProcessed, newsletterUnread: newsletterUnread };
+
   } catch (error) {
     Logger.log('Failed to get statistics: ' + error.message);
-    return {
-      todayProcessed: 0,
-      newsletterUnread: 0
-    };
+    return { todayProcessed: 0, newsletterUnread: 0 };
   }
 }
 

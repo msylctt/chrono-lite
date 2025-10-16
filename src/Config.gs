@@ -55,3 +55,97 @@ const CATEGORIES = {
  */
 const TEST_LABEL = 'Chrono/Test'; // 测试标签
 const TEST_EMAIL_COUNT = 10;       // 测试邮件数量
+
+/**
+ * 处理标记（避免重复扫描）
+ */
+const PROCESSED_LABEL = 'Chrono/Processed';
+
+/**
+ * 全局日志级别（默认 INFO）。可被用户属性 chrono_log_level 覆盖
+ * 可选: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
+ */
+const LOG_LEVEL = 'INFO';
+
+/**
+ * 分类器特性开关（渐进式发布）
+ */
+const FEATURE_FLAGS = {
+  enableHeaders: true,          // Phase A: 启用高置信度头部启发式
+  enableSenderContext: false,   // Phase B: 发件人规范化与子域意图
+  enableReputation: false,      // Phase C: 本地信誉缓存
+  enableContent: true,          // Phase D: 轻量内容启发式
+  enableScoring: true           // Phase E: 评分与阈值
+};
+
+/**
+ * 头部启发式权重（初始值，可在线微调）
+ */
+const HEADER_WEIGHTS = {
+  list_unsubscribe_post: 20,   // RFC 8058 一键退订
+  list_unsubscribe: 9,         // RFC 2369
+  list_id: 9,                  // RFC 2919
+  precedence_bulk: 8,          // 事实标准：bulk/list/junk
+  x_smtpapi: 9,                // SendGrid 指纹
+  x_campaign_id: 7,            // 通用活动追踪头
+  auto_submitted_negative: -20 // RFC 3834 自动回复（非 no）
+};
+
+/**
+ * 分类阈值（加权求和超过此值触发分类）
+ */
+const CLASSIFIER_THRESHOLD = 15;
+
+/**
+ * 日志采样（0-1），用于控制结构化日志输出频率
+ */
+const LOG_SAMPLING_RATE = 1.0;
+
+/**
+ * 发件人上下文（子域名意图）配置
+ */
+const SUBDOMAIN_POSITIVE = [
+  'promo', 'news', 'newsletter', 'updates', 'info', 'email', 'go', 'e', 'hello'
+];
+const SUBDOMAIN_NEGATIVE = [
+  'auth', 'support', 'billing', 'security', 'app', 'my', 'account'
+];
+
+const SENDER_CONTEXT_WEIGHTS = {
+  subdomain_positive: 12,
+  subdomain_negative: -15
+};
+
+/**
+ * 本地信誉缓存配置（PropertiesService）
+ */
+const REPUTATION_CONFIG = {
+  ttlDays: 30,             // 过期时间（天）
+  minScoreToCache: 15,     // 仅当决策分数≥该值时写入信誉
+  maxEntries: 2000         // 软上限（未强制执行）
+};
+
+/**
+ * 内容层配置（轻量扫描）
+ */
+const CONTENT_CONFIG = {
+  footerScanBytes: 2048, // 扫描正文末尾 N 字节
+  unsubscribeWeight: 10, // 退订链接权重
+  keywordWeights: {
+    'unsubscribe': 10,
+    'manage preferences': 8,
+    'opt-out': 8,
+    'view in browser': 4
+  }
+};
+
+/**
+ * 主题关键词权重（Newsletter）
+ */
+const SUBJECT_WEIGHTS = {
+  'newsletter': 5,
+  'weekly digest': 5,
+  'daily brief': 5,
+  'roundup': 4,
+  'update summary': 4
+};

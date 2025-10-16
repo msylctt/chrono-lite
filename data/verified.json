@@ -1,73 +1,1099 @@
 {
   "version": "test-1.0.0",
   "last_updated": "2025-10-14T12:00:00Z",
-  "total_entries": 62,
+  "total_entries": 364,
   "senders": {
-    "newsletter@google.com": { "category": "Tech News" },
-    "updates@apple.com": { "category": "Product Updates" },
-    "promo@amazon.com": { "category": "Marketing" },
-    "newsletter@microsoft.com": { "category": "Tech News" },
-    "updates@notion.so": { "category": "Product Updates" },
-    "newsletter@figma.com": { "category": "Product Updates" },
-    "newsletter@substack.com": { "category": "Newsletter" },
-    "newsletter@medium.com": { "category": "Newsletter" },
-    "updates@github.com": { "category": "Product Updates" },
-    "updates@gitlab.com": { "category": "Product Updates" },
-    "news@slack.com": { "category": "Product Updates" },
-    "updates@atlassian.com": { "category": "Product Updates" },
-    "updates@trello.com": { "category": "Product Updates" },
-    "news@asana.com": { "category": "Product Updates" },
-    "updates@dropbox.com": { "category": "Product Updates" },
-    "news@box.com": { "category": "Product Updates" },
-    "newsletter@adobe.com": { "category": "Product Updates" },
-    "news@airbnb.com": { "category": "Marketing" },
-    "offers@uber.com": { "category": "Marketing" },
-    "news@lyft.com": { "category": "Marketing" },
-    "updates@stripe.com": { "category": "Product Updates" },
-    "news@paypal.com": { "category": "Product Updates" },
-    "newsletter@x.com": { "category": "Tech News" },
-    "updates@linkedin.com": { "category": "Product Updates" },
-    "mail@facebookmail.com": { "category": "Marketing" },
-    "news@instagram.com": { "category": "Marketing" },
-    "newsletter@tiktok.com": { "category": "Marketing" },
-    "updates@youtube.com": { "category": "Product Updates" },
-    "news@netflix.com": { "category": "Marketing" },
-    "newsletter@spotify.com": { "category": "Marketing" },
-    "updates@cloudflare.com": { "category": "Product Updates" },
-    "newsletter@digitalocean.com": { "category": "Tech News" },
-    "updates@vercel.com": { "category": "Product Updates" },
-    "newsletter@netlify.com": { "category": "Product Updates" },
-    "news@heroku.com": { "category": "Product Updates" },
-    "newsletter@mailchimp.com": { "category": "Newsletter" },
-    "newsletter@sendgrid.net": { "category": "Newsletter" },
-    "newsletter@convertkit.com": { "category": "Newsletter" },
-    "newsletter@beehiiv.com": { "category": "Newsletter" },
-    "updates@hubspot.com": { "category": "Product Updates" },
-    "updates@salesforce.com": { "category": "Product Updates" },
-    "news@zendesk.com": { "category": "Product Updates" },
-    "newsletter@intercom.com": { "category": "Product Updates" },
-    "news@squarespace.com": { "category": "Product Updates" },
-    "newsletter@wix.com": { "category": "Product Updates" },
-    "newsletter@shopify.com": { "category": "Product Updates" },
-    "newsletter@bigcommerce.com": { "category": "Product Updates" },
-    "news@woocommerce.com": { "category": "Product Updates" },
-    "updates@calendly.com": { "category": "Product Updates" },
-    "updates@zoom.us": { "category": "Product Updates" },
-    "newsletter@webex.com": { "category": "Product Updates" },
-    "news@gotomeeting.com": { "category": "Product Updates" },
-    "newsletter@eventbrite.com": { "category": "Newsletter" },
-    "newsletter@coursera.org": { "category": "Newsletter" },
-    "newsletter@udemy.com": { "category": "Newsletter" },
-    "newsletter@khanacademy.org": { "category": "Newsletter" },
-    "newsletter@reddit.com": { "category": "Newsletter" },
-    "newsletter@hackernewsletter.com": { "category": "Newsletter" },
-    "newsletter@fastmail.com": { "category": "Newsletter" },
-    "newsletter@hey.com": { "category": "Newsletter" },
-    "updates@nvidia.com": { "category": "Product Updates" },
-    "newsletter@openai.com": { "category": "Tech News" },
-    "newsletter@anthropic.com": { "category": "Tech News" },
-    "newsletter@stratechery.com": { "category": "Newsletter" },
-    "news@morningbrew.com": { "category": "Newsletter" }
+    "newsletter@google.com": {
+      "category": "Product Updates"
+    },
+    "updates@apple.com": {
+      "category": "Product Updates"
+    },
+    "promo@amazon.com": {
+      "category": "Marketing"
+    },
+    "newsletter@microsoft.com": {
+      "category": "Product Updates"
+    },
+    "updates@notion.so": {
+      "category": "Product Updates"
+    },
+    "newsletter@figma.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@substack.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@medium.com": {
+      "category": "Newsletter"
+    },
+    "updates@github.com": {
+      "category": "Product Updates"
+    },
+    "updates@gitlab.com": {
+      "category": "Product Updates"
+    },
+    "news@slack.com": {
+      "category": "Product Updates"
+    },
+    "updates@atlassian.com": {
+      "category": "Product Updates"
+    },
+    "updates@trello.com": {
+      "category": "Product Updates"
+    },
+    "news@asana.com": {
+      "category": "Product Updates"
+    },
+    "updates@dropbox.com": {
+      "category": "Product Updates"
+    },
+    "news@box.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@adobe.com": {
+      "category": "Product Updates"
+    },
+    "news@airbnb.com": {
+      "category": "Marketing"
+    },
+    "offers@uber.com": {
+      "category": "Marketing"
+    },
+    "news@lyft.com": {
+      "category": "Marketing"
+    },
+    "updates@stripe.com": {
+      "category": "Product Updates"
+    },
+    "news@paypal.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@x.com": {
+      "category": "Marketing"
+    },
+    "updates@linkedin.com": {
+      "category": "Product Updates"
+    },
+    "mail@facebookmail.com": {
+      "category": "Marketing"
+    },
+    "news@instagram.com": {
+      "category": "Marketing"
+    },
+    "newsletter@tiktok.com": {
+      "category": "Marketing"
+    },
+    "updates@youtube.com": {
+      "category": "Product Updates"
+    },
+    "news@netflix.com": {
+      "category": "Marketing"
+    },
+    "newsletter@spotify.com": {
+      "category": "Marketing"
+    },
+    "updates@cloudflare.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@digitalocean.com": {
+      "category": "Tech News"
+    },
+    "updates@vercel.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@netlify.com": {
+      "category": "Product Updates"
+    },
+    "news@heroku.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@mailchimp.com": {
+      "category": "Marketing"
+    },
+    "newsletter@sendgrid.net": {
+      "category": "Marketing"
+    },
+    "newsletter@convertkit.com": {
+      "category": "Marketing"
+    },
+    "newsletter@beehiiv.com": {
+      "category": "Marketing"
+    },
+    "updates@hubspot.com": {
+      "category": "Product Updates"
+    },
+    "updates@salesforce.com": {
+      "category": "Product Updates"
+    },
+    "news@zendesk.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@intercom.com": {
+      "category": "Product Updates"
+    },
+    "news@squarespace.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@wix.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@shopify.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@bigcommerce.com": {
+      "category": "Product Updates"
+    },
+    "news@woocommerce.com": {
+      "category": "Product Updates"
+    },
+    "updates@calendly.com": {
+      "category": "Product Updates"
+    },
+    "updates@zoom.us": {
+      "category": "Product Updates"
+    },
+    "newsletter@webex.com": {
+      "category": "Product Updates"
+    },
+    "news@gotomeeting.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@eventbrite.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@coursera.org": {
+      "category": "Newsletter"
+    },
+    "newsletter@udemy.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@khanacademy.org": {
+      "category": "Newsletter"
+    },
+    "newsletter@reddit.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@hackernewsletter.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@fastmail.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@hey.com": {
+      "category": "Product Updates"
+    },
+    "updates@nvidia.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@openai.com": {
+      "category": "Tech News"
+    },
+    "newsletter@anthropic.com": {
+      "category": "Tech News"
+    },
+    "newsletter@stratechery.com": {
+      "category": "Newsletter"
+    },
+    "news@morningbrew.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@techcrunch.com": {
+      "category": "Tech News"
+    },
+    "newsletter@theverge.com": {
+      "category": "Tech News"
+    },
+    "news@wired.com": {
+      "category": "Tech News"
+    },
+    "newsletter@arstechnica.com": {
+      "category": "Tech News"
+    },
+    "briefing@theinformation.com": {
+      "category": "Tech News"
+    },
+    "newsletters@axios.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@vox.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@theatlantic.com": {
+      "category": "Newsletter"
+    },
+    "news@bbc.co.uk": {
+      "category": "Newsletter"
+    },
+    "newsletters@nytimes.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@washingtonpost.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@wsj.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@ft.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@bloomberg.com": {
+      "category": "Newsletter"
+    },
+    "digest@producthunt.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@indiehackers.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@ycombinator.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@stackoverflow.com": {
+      "category": "Tech News"
+    },
+    "updates@kubernetes.io": {
+      "category": "Product Updates"
+    },
+    "updates@docker.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@hashnode.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@dev.to": {
+      "category": "Newsletter"
+    },
+    "updates@visualstudio.com": {
+      "category": "Product Updates"
+    },
+    "updates@jetbrains.com": {
+      "category": "Product Updates"
+    },
+    "releases@python.org": {
+      "category": "Product Updates"
+    },
+    "releases@nodejs.org": {
+      "category": "Product Updates"
+    },
+    "announce@rust-lang.org": {
+      "category": "Product Updates"
+    },
+    "newsletter@golang.org": {
+      "category": "Tech News"
+    },
+    "updates@pytorch.org": {
+      "category": "Product Updates"
+    },
+    "updates@tensorflow.org": {
+      "category": "Product Updates"
+    },
+    "newsletter@huggingface.co": {
+      "category": "Tech News"
+    },
+    "updates@openai.com": {
+      "category": "Product Updates"
+    },
+    "updates@anthropic.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@deeplearning.ai": {
+      "category": "Newsletter"
+    },
+    "newsletter@towardsdatascience.com": {
+      "category": "Newsletter"
+    },
+    "news@kdnuggets.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@cloud.google.com": {
+      "category": "Product Updates"
+    },
+    "news@aws.amazon.com": {
+      "category": "Product Updates"
+    },
+    "azure-noreply@microsoft.com": {
+      "category": "Product Updates"
+    },
+    "updates@digitalocean.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@linode.com": {
+      "category": "Product Updates"
+    },
+    "updates@oraclecloud.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@snowflake.com": {
+      "category": "Product Updates"
+    },
+    "updates@databricks.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@mongodb.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@postgresql.org": {
+      "category": "Product Updates"
+    },
+    "announce@mysql.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@redis.com": {
+      "category": "Product Updates"
+    },
+    "updates@elastic.co": {
+      "category": "Product Updates"
+    },
+    "newsletter@grafana.com": {
+      "category": "Product Updates"
+    },
+    "updates@prometheus.io": {
+      "category": "Product Updates"
+    },
+    "newsletter@newrelic.com": {
+      "category": "Product Updates"
+    },
+    "updates@datadoghq.com": {
+      "category": "Product Updates"
+    },
+    "updates@sentry.io": {
+      "category": "Product Updates"
+    },
+    "newsletter@rollbar.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@raygun.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@pagerduty.com": {
+      "category": "Product Updates"
+    },
+    "updates@opsgenie.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@statuspage.io": {
+      "category": "Product Updates"
+    },
+    "updates@cloudflarestatus.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@letsencrypt.org": {
+      "category": "Product Updates"
+    },
+    "security@github.com": {
+      "category": "Product Updates"
+    },
+    "security@gitlab.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@haveibeenpwned.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@krebsonsecurity.com": {
+      "category": "Newsletter"
+    },
+    "news@darkreading.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@zdnet.com": {
+      "category": "Tech News"
+    },
+    "newsletter@engadget.com": {
+      "category": "Tech News"
+    },
+    "newsletter@9to5google.com": {
+      "category": "Tech News"
+    },
+    "newsletter@macrumors.com": {
+      "category": "Tech News"
+    },
+    "newsletter@androidpolice.com": {
+      "category": "Tech News"
+    },
+    "newsletter@notion.so": {
+      "category": "Product Updates"
+    },
+    "updates@slack.com": {
+      "category": "Product Updates"
+    },
+    "updates@zoom.com": {
+      "category": "Product Updates"
+    },
+    "updates@box.com": {
+      "category": "Product Updates"
+    },
+    "updates@airtable.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@trello.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@asana.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@clickup.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@todoist.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@evernote.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@notability.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@craft.do": {
+      "category": "Product Updates"
+    },
+    "newsletter@superhuman.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@proton.me": {
+      "category": "Product Updates"
+    },
+    "newsletter@1password.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@lastpass.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@dashlane.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@okta.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@auth0.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@cloudflare.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@vercel.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@heroku.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@circleci.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@travis-ci.org": {
+      "category": "Product Updates"
+    },
+    "newsletter@github.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@gitlab.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@bitbucket.org": {
+      "category": "Product Updates"
+    },
+    "newsletter@sourcetreeapp.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@jira.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@confluence.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@atlassian.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@canva.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@sketch.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@zeplin.io": {
+      "category": "Product Updates"
+    },
+    "newsletter@invisionapp.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@monday.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@notion.site": {
+      "category": "Product Updates"
+    },
+    "newsletter@miro.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@lucidchart.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@zendesk.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@freshdesk.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@drift.com": {
+      "category": "Marketing"
+    },
+    "newsletter@hubspot.com": {
+      "category": "Marketing"
+    },
+    "newsletter@salesforce.com": {
+      "category": "Marketing"
+    },
+    "newsletter@marketo.com": {
+      "category": "Marketing"
+    },
+    "newsletter@pardot.com": {
+      "category": "Marketing"
+    },
+    "newsletter@sendgrid.com": {
+      "category": "Marketing"
+    },
+    "newsletter@linkedin.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@facebookmail.com": {
+      "category": "Marketing"
+    },
+    "newsletter@instagram.com": {
+      "category": "Marketing"
+    },
+    "newsletter@snapchat.com": {
+      "category": "Marketing"
+    },
+    "newsletter@pinterest.com": {
+      "category": "Marketing"
+    },
+    "offers@ubereats.com": {
+      "category": "Marketing"
+    },
+    "offers@doordash.com": {
+      "category": "Marketing"
+    },
+    "offers@grubhub.com": {
+      "category": "Marketing"
+    },
+    "offers@instacart.com": {
+      "category": "Marketing"
+    },
+    "news@ubereats.com": {
+      "category": "Marketing"
+    },
+    "newsletter@ubereats.com": {
+      "category": "Marketing"
+    },
+    "newsletter@ubere.com": {
+      "category": "Marketing"
+    },
+    "newsletter@lyftmail.com": {
+      "category": "Marketing"
+    },
+    "offers@airbnb.com": {
+      "category": "Marketing"
+    },
+    "newsletter@booking.com": {
+      "category": "Marketing"
+    },
+    "newsletter@expedia.com": {
+      "category": "Marketing"
+    },
+    "newsletter@tripadvisor.com": {
+      "category": "Marketing"
+    },
+    "newsletter@delta.com": {
+      "category": "Marketing"
+    },
+    "newsletter@united.com": {
+      "category": "Marketing"
+    },
+    "newsletter@aa.com": {
+      "category": "Marketing"
+    },
+    "newsletter@southwest.com": {
+      "category": "Marketing"
+    },
+    "deals@hotels.com": {
+      "category": "Marketing"
+    },
+    "offers@marriott.com": {
+      "category": "Marketing"
+    },
+    "offers@hyatt.com": {
+      "category": "Marketing"
+    },
+    "offers@hilton.com": {
+      "category": "Marketing"
+    },
+    "newsletter@nike.com": {
+      "category": "Marketing"
+    },
+    "newsletter@adidas.com": {
+      "category": "Marketing"
+    },
+    "newsletter@reebok.com": {
+      "category": "Marketing"
+    },
+    "newsletter@puma.com": {
+      "category": "Marketing"
+    },
+    "newsletter@lululemon.com": {
+      "category": "Marketing"
+    },
+    "newsletter@h&m.com": {
+      "category": "Marketing"
+    },
+    "newsletter@zara.com": {
+      "category": "Marketing"
+    },
+    "newsletter@uniqlo.com": {
+      "category": "Marketing"
+    },
+    "newsletter@shein.com": {
+      "category": "Marketing"
+    },
+    "newsletter@target.com": {
+      "category": "Marketing"
+    },
+    "newsletter@walmart.com": {
+      "category": "Marketing"
+    },
+    "newsletter@bestbuy.com": {
+      "category": "Marketing"
+    },
+    "newsletter@costco.com": {
+      "category": "Marketing"
+    },
+    "deals@amazon.com": {
+      "category": "Marketing"
+    },
+    "newsletter@ebay.com": {
+      "category": "Marketing"
+    },
+    "newsletter@etsy.com": {
+      "category": "Marketing"
+    },
+    "newsletter@shop.app": {
+      "category": "Marketing"
+    },
+    "newsletter@doorDash.com": {
+      "category": "Marketing"
+    },
+    "newsletter@groupon.com": {
+      "category": "Marketing"
+    },
+    "newsletter@hulu.com": {
+      "category": "Marketing"
+    },
+    "newsletter@disneyplus.com": {
+      "category": "Marketing"
+    },
+    "newsletter@peacocktv.com": {
+      "category": "Marketing"
+    },
+    "newsletter@paramountplus.com": {
+      "category": "Marketing"
+    },
+    "newsletter@max.com": {
+      "category": "Marketing"
+    },
+    "newsletter@roku.com": {
+      "category": "Marketing"
+    },
+    "newsletter@apple.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@meta.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@tesla.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@nvidia.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@amd.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@intel.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@qualcomm.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@arm.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@stripe.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@paypal.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@squareup.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@brex.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@ramp.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@wise.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@revolut.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@coinbase.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@binance.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@kraken.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@robinhood.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@etoro.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@fidelity.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@vanguard.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@schwab.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@barrons.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@seekingalpha.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@morningstar.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@marketwatch.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@investopedia.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@forbes.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@fortune.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@businessinsider.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@reuters.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@apnews.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@npr.org": {
+      "category": "Newsletter"
+    },
+    "newsletter@theguardian.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@nytimes.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@substacknews.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@hackernoon.com": {
+      "category": "Tech News"
+    },
+    "newsletter@dzone.com": {
+      "category": "Tech News"
+    },
+    "newsletter@infoq.com": {
+      "category": "Tech News"
+    },
+    "newsletter@packtpub.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@oreilly.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@udacity.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@pluralsight.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@duolingo.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@grammarly.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@notionmail.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@miroteam.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@linear.app": {
+      "category": "Product Updates"
+    },
+    "newsletter@shortcut.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@height.app": {
+      "category": "Product Updates"
+    },
+    "newsletter@loom.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@descript.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@figjam.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@whimsical.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@read.cv": {
+      "category": "Newsletter"
+    },
+    "newsletter@supabase.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@planetscale.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@railway.app": {
+      "category": "Product Updates"
+    },
+    "newsletter@render.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@fly.io": {
+      "category": "Product Updates"
+    },
+    "newsletter@cloud66.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@pulumi.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@terraform.io": {
+      "category": "Product Updates"
+    },
+    "newsletter@hashicorp.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@cloudbees.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@jenkins.io": {
+      "category": "Product Updates"
+    },
+    "newsletter@githubstatus.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@npmjs.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@pnpm.io": {
+      "category": "Product Updates"
+    },
+    "newsletter@yarnpkg.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@vitejs.dev": {
+      "category": "Product Updates"
+    },
+    "newsletter@webpack.js.org": {
+      "category": "Product Updates"
+    },
+    "newsletter@babeljs.io": {
+      "category": "Product Updates"
+    },
+    "newsletter@eslint.org": {
+      "category": "Product Updates"
+    },
+    "newsletter@prettier.io": {
+      "category": "Product Updates"
+    },
+    "newsletter@react.dev": {
+      "category": "Product Updates"
+    },
+    "newsletter@vuejs.org": {
+      "category": "Product Updates"
+    },
+    "newsletter@svelte.dev": {
+      "category": "Product Updates"
+    },
+    "newsletter@angular.io": {
+      "category": "Product Updates"
+    },
+    "newsletter@nextjs.org": {
+      "category": "Product Updates"
+    },
+    "newsletter@nuxtjs.org": {
+      "category": "Product Updates"
+    },
+    "newsletter@gatsbyjs.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@remix.run": {
+      "category": "Product Updates"
+    },
+    "newsletter@solidjs.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@storybook.js.org": {
+      "category": "Product Updates"
+    },
+    "newsletter@tailwindcss.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@chakra-ui.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@mantine.dev": {
+      "category": "Product Updates"
+    },
+    "newsletter@radix-ui.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@elastic.co": {
+      "category": "Product Updates"
+    },
+    "newsletter@konghq.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@apigee.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@postman.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@insomnia.rest": {
+      "category": "Product Updates"
+    },
+    "newsletter@twilio.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@plaid.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@segment.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@mixpanel.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@amplitude.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@hotjar.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@fullstory.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@heap.io": {
+      "category": "Product Updates"
+    },
+    "newsletter@iterable.com": {
+      "category": "Marketing"
+    },
+    "newsletter@braze.com": {
+      "category": "Marketing"
+    },
+    "newsletter@customer.io": {
+      "category": "Marketing"
+    },
+    "newsletter@klaviyo.com": {
+      "category": "Marketing"
+    },
+    "newsletter@attentive.com": {
+      "category": "Marketing"
+    },
+    "newsletter@sailthru.com": {
+      "category": "Marketing"
+    },
+    "newsletter@campaignmonitor.com": {
+      "category": "Marketing"
+    },
+    "newsletter@constantcontact.com": {
+      "category": "Marketing"
+    },
+    "newsletter@salesloft.com": {
+      "category": "Marketing"
+    },
+    "newsletter@outreach.io": {
+      "category": "Marketing"
+    },
+    "newsletter@g2.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@capterra.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@getapp.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@trustpilot.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@productschool.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@mindtheproduct.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@uxdesign.cc": {
+      "category": "Newsletter"
+    },
+    "newsletter@smashingmagazine.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@a16z.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@sequoiacap.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@indexventures.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@foundersfund.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@greylock.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@lightspeedvp.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@meetup.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@stripepress.com": {
+      "category": "Newsletter"
+    },
+    "newsletter@openhq.com": {
+      "category": "Product Updates"
+    },
+    "newsletter@linear-email.com": {
+      "category": "Product Updates"
+    }
   }
 }
-

@@ -22,8 +22,8 @@ function autoProcessInbox() {
     var now = new Date().toISOString();
     userProps.setProperty('chrono_last_run', now);
 
-    // 处理最近 1 天的新邮件（避免漏掉）
-    var query = 'in:inbox newer_than:1d';
+    // 处理最近 1 天的新邮件（避免漏掉），跳过已处理标签
+    var query = 'in:inbox newer_than:1d -label:"' + PROCESSED_LABEL + '"';
     var threads = GmailApp.search(query, 0, 100);
 
     if (threads.length === 0) {
@@ -98,8 +98,8 @@ function initialSetup() {
       version: meta.version
     });
 
-    // 2. 处理最近 7 天邮件（快速模式）
-    var query = 'in:inbox newer_than:7d';
+    // 2. 处理最近 7 天邮件（快速模式），跳过已处理标签
+    var query = 'in:inbox newer_than:7d -label:"' + PROCESSED_LABEL + '"';
     var threads = GmailApp.search(query, 0, 100);
 
     Log.info(Log.Module.INIT, 'Scanning inbox', {

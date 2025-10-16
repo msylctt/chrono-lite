@@ -8,6 +8,20 @@
 var _domainCache = {};
 
 /**
+ * 测试辅助：构造模拟 GmailMessage
+ */
+function makeMockMessage(from, subject, headers) {
+  var _from = from || '';
+  var _subject = subject || '';
+  var _headers = headers || {};
+  return {
+    getFrom: function() { return _from; },
+    getSubject: function() { return _subject; },
+    getHeader: function(name) { return _headers[name] || null; }
+  };
+}
+
+/**
  * 提取邮箱地址（处理各种格式）
  */
 function extractEmail(fromString) {
@@ -608,6 +622,33 @@ function testClassificationPerformance() {
 function runPhase2Tests() {
   Logger.log('🚀 开始 Phase 2 验证');
   Logger.log('='.repeat(60));
+
+  // 先运行合成用例，验证头部评分与回退规则
+  try {
+    Logger.log('\n🧪 合成用例: 头部启发式与回退');
+    var syntheticMessages = [
+      // 强阳性：一键退订 + List-Unsubscribe
+      makeMockMessage('Weekly <news@example.com>', 'Your weekly digest', {
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        'List-Unsubscribe': '<mailto:unsubscribe@example.com>',
+        'List-Id': '<weekly.example.com>'
+      }),
+      // 负面：Auto-Submitted 自动回复
+      makeMockMessage('Auto <bot@system.example>', 'Out of office', {
+        'Auto-Submitted': 'auto-replied'
+      }),
+      // 主题回退：无头部，主题含营销词
+      makeMockMessage('Store <promo@shop.example>', 'Big SALE today', { })
+    ];
+
+    var syntheticResults = syntheticMessages.map(function(m){ return classifyEmail(m); });
+    for (var i = 0; i < syntheticResults.length; i++) {
+      var r = syntheticResults[i];
+      Logger.log('  - case ' + (i+1) + ': ' + (r ? (r.category + ' / ' + (r.method || 'n/a')) : 'unclassified'));
+    }
+  } catch (eSyn) {
+    Logger.log('❌ 合成用例失败: ' + eSyn.message);
+  }
 
   // 清空域名缓存
   _domainCache = {};

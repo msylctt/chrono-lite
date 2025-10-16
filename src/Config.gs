@@ -62,6 +62,12 @@ const TEST_EMAIL_COUNT = 10;       // 测试邮件数量
 const PROCESSED_LABEL = 'Chrono/Processed';
 
 /**
+ * 全局日志级别（默认 INFO）。可被用户属性 chrono_log_level 覆盖
+ * 可选: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
+ */
+const LOG_LEVEL = 'INFO';
+
+/**
  * 分类器特性开关（渐进式发布）
  */
 const FEATURE_FLAGS = {

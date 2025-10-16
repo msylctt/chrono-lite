@@ -127,3 +127,14 @@ const CONTENT_CONFIG = {
     'view in browser': 4
   }
 };
+
+/**
+ * 主题关键词权重（Newsletter）
+ */
+const SUBJECT_WEIGHTS = {
+  'newsletter': 5,
+  'weekly digest': 5,
+  'daily brief': 5,
+  'roundup': 4,
+  'update summary': 4
+};

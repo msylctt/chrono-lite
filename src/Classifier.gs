@@ -281,6 +281,17 @@ function classifyByHeuristics(message) {
       }
     }
 
+    // Phase E: 主题关键词权重（合入总分）
+    try {
+      var subjectLower = subject.toLowerCase();
+      for (var sk in SUBJECT_WEIGHTS) {
+        if (SUBJECT_WEIGHTS.hasOwnProperty(sk) && subjectLower.indexOf(sk) !== -1) {
+          score += SUBJECT_WEIGHTS[sk];
+          features.push('subject_' + sk);
+        }
+      }
+    } catch (eSubj) {}
+
     if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableScoring && score >= CLASSIFIER_THRESHOLD) {
       return {
         category: 'Newsletter',
@@ -295,27 +306,10 @@ function classifyByHeuristics(message) {
 
   // 平台域名不作为直接分类依据（ESP 域名覆盖泛交易/营销），改由头部/内容/上下文综合判定
 
-  // 规则 3: 主题关键词
-  var newsletterKeywords = [
-    'newsletter',
-    'weekly digest',
-    'daily brief',
-    'roundup',
-    'update summary'
-  ];
-
-  var subjectLower = subject.toLowerCase();
-  for (var i = 0; i < newsletterKeywords.length; i++) {
-    if (subjectLower.includes(newsletterKeywords[i])) {
-      return {
-        category: 'Newsletter',
-        source: 'heuristic',
-        method: 'subject_keyword'
-      };
-    }
-  }
+  // 主题关键词已纳入加权模型（上方 Phase E），此处不再单独返回
 
   // 规则 4: 营销邮件特征（仅基于主题）
+  // 保留营销主题快捷判断（不参与 newsletter 加权）
   if (subject.match(/sale|discount|offer|deal|促销|优惠/i)) {
     return {
       category: 'Marketing',
@@ -333,16 +327,15 @@ function classifyByHeuristics(message) {
         var txt = (slice + '').toLowerCase();
         var score = 0;
         var kw = CONTENT_CONFIG.keywordWeights || {};
-        // 退订链接/关键字
         for (var key in kw) {
           if (kw.hasOwnProperty(key) && txt.indexOf(key) !== -1) {
             score += kw[key];
           }
         }
-        // 简单的 unsubscribe 链接正则
         if (/unsubscribe/i.test(txt)) {
           score += CONTENT_CONFIG.unsubscribeWeight;
         }
+        // 与前述 header/context/subject 得分合并
         if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableScoring && score >= CLASSIFIER_THRESHOLD) {
           return {
             category: 'Newsletter',

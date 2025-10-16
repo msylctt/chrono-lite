@@ -9,6 +9,18 @@ var _domainCache = {};
 var _reputationCache = null; // 运行期内缓存一次
 
 /**
+ * 日志采样判定
+ */
+function shouldLogSample() {
+  try {
+    var r = Math.random();
+    return r < (LOG_SAMPLING_RATE || 1.0);
+  } catch (e) {
+    return true;
+  }
+}
+
+/**
  * 测试辅助：构造模拟 GmailMessage
  */
 function makeMockMessage(from, subject, headers) {
@@ -375,18 +387,41 @@ function classifyEmail(message) {
   // Level 1: 精确匹配
   var exactResult = classifyByExactMatch(senderEmail);
   if (exactResult) {
+    if (shouldLogSample()) {
+      Log.info(Log.Module.CLASSIFIER, 'classified (exact)', {
+        layer: 'L1',
+        method: exactResult.method,
+        category: exactResult.category
+      });
+    }
     return exactResult;
   }
 
   // Level 2: 域名匹配
   var domainResult = classifyByDomain(normalized);
   if (domainResult) {
+    if (shouldLogSample()) {
+      Log.info(Log.Module.CLASSIFIER, 'classified (domain)', {
+        layer: 'L2',
+        method: domainResult.method,
+        category: domainResult.category
+      });
+    }
     return domainResult;
   }
 
   // Level 3: 启发式规则
   var heuristicResult = classifyByHeuristics(message);
   if (heuristicResult) {
+    if (shouldLogSample()) {
+      Log.info(Log.Module.CLASSIFIER, 'classified (heuristic)', {
+        layer: 'L3',
+        method: heuristicResult.method,
+        score: heuristicResult.score || 0,
+        threshold: CLASSIFIER_THRESHOLD,
+        category: heuristicResult.category
+      });
+    }
     // 写回信誉（高置信度）
     if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableReputation) {
       var repKey2 = normalized.split('@')[1] || normalized;
@@ -533,6 +568,12 @@ function classifyBatch(messages) {
         source: 'database_exact',
         method: 'exact_match'
       });
+      if (shouldLogSample()) {
+        Log.debug(Log.Module.CLASSIFIER, 'classified (exact/batch)', {
+          layer: 'L1',
+          category: exactResult.category
+        });
+      }
       continue;
     }
 
@@ -560,6 +601,12 @@ function classifyBatch(messages) {
             source: 'database_domain',
             method: 'domain_match'
           });
+        if (shouldLogSample()) {
+          Log.debug(Log.Module.CLASSIFIER, 'classified (domain/batch)', {
+            layer: 'L2',
+            category: dr.category
+          });
+        }
           domainMatched = true;
           break;
         }
@@ -576,6 +623,13 @@ function classifyBatch(messages) {
         source: 'heuristic',
         method: heuristicResult.method
       });
+      if (shouldLogSample()) {
+        Log.debug(Log.Module.CLASSIFIER, 'classified (heuristic/batch)', {
+          layer: 'L3',
+          method: heuristicResult.method,
+          category: heuristicResult.category
+        });
+      }
       // 写回信誉
       if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableReputation) {
         var repKeyB = m.domain || m.email;

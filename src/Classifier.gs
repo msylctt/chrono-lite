@@ -6,6 +6,7 @@
  * 会话级域名缓存
  */
 var _domainCache = {};
+var _reputationCache = null; // 运行期内缓存一次
 
 /**
  * 测试辅助：构造模拟 GmailMessage
@@ -82,6 +83,61 @@ function scoreSubdomainIntent(domain) {
     }
   }
   return { score: score, features: features };
+}
+
+/**
+ * 本地信誉：读取（PropertiesService）
+ */
+function getLocalReputation() {
+  if (_reputationCache) return _reputationCache;
+  try {
+    var props = PropertiesService.getUserProperties();
+    var raw = props.getProperty('CL_REPUTATION');
+    _reputationCache = raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    _reputationCache = {};
+  }
+  return _reputationCache;
+}
+
+/**
+ * 写入/更新本地信誉
+ */
+function updateLocalReputation(key, category, score) {
+  try {
+    if (typeof FEATURE_FLAGS === 'undefined' || !FEATURE_FLAGS.enableReputation) return;
+    if (score < REPUTATION_CONFIG.minScoreToCache) return;
+    var now = new Date().getTime();
+    var rep = getLocalReputation();
+    var entry = rep[key] || { category: category, score: score, hits: 0, updatedAt: now };
+    entry.category = category;
+    entry.score = score;
+    entry.hits = (entry.hits || 0) + 1;
+    entry.updatedAt = now;
+    rep[key] = entry;
+    PropertiesService.getUserProperties().setProperty('CL_REPUTATION', JSON.stringify(rep));
+    _reputationCache = rep;
+  } catch (e) {
+    // ignore
+  }
+}
+
+/**
+ * 读取信誉命中（含 TTL）
+ */
+function readReputation(key) {
+  try {
+    var rep = getLocalReputation();
+    var entry = rep[key];
+    if (!entry) return null;
+    var ageDays = (new Date().getTime() - (entry.updatedAt || 0)) / (24*60*60*1000);
+    if (ageDays > REPUTATION_CONFIG.ttlDays) {
+      return null;
+    }
+    return entry;
+  } catch (e) {
+    return null;
+  }
 }
 
 /**
@@ -278,6 +334,19 @@ function classifyEmail(message) {
   var senderEmail = extractEmail(message.getFrom());
   var normalized = (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableSenderContext) ? normalizeEmail(senderEmail) : senderEmail;
 
+  // Phase C: 信誉快速路径
+  if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableReputation) {
+    var repKey = normalized.split('@')[1] || normalized; // 优先按域名缓存
+    var rep = readReputation(repKey);
+    if (rep && rep.category) {
+      return {
+        category: rep.category,
+        source: 'reputation',
+        method: 'local_reputation'
+      };
+    }
+  }
+
   // Level 1: 精确匹配
   var exactResult = classifyByExactMatch(senderEmail);
   if (exactResult) {
@@ -293,6 +362,12 @@ function classifyEmail(message) {
   // Level 3: 启发式规则
   var heuristicResult = classifyByHeuristics(message);
   if (heuristicResult) {
+    // 写回信誉（高置信度）
+    if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableReputation) {
+      var repKey2 = normalized.split('@')[1] || normalized;
+      var scoreToCache = (heuristicResult.score || 0);
+      updateLocalReputation(repKey2, heuristicResult.category, scoreToCache);
+    }
     return heuristicResult;
   }
 
@@ -317,6 +392,7 @@ function classifyBatch(messages) {
       email: normalized,
       domain: domain,
       subject: msg.getSubject(),
+      reputation: null,
       unsubscribe: null,
       autoSubmitted: null,
       listId: null,
@@ -336,12 +412,26 @@ function classifyBatch(messages) {
   var domainQueries = [];
   var domainQueryMap = {}; // email -> [query patterns]
 
+  // Phase C: 预取信誉
+  if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableReputation) {
+    var repAll = getLocalReputation();
+    for (var r = 0; r < metadata.length; r++) {
+      var dk = metadata[r].domain || metadata[r].email;
+      var entry = readReputation(dk);
+      if (entry) metadata[r].reputation = entry;
+    }
+  }
+
   for (var i = 0; i < metadata.length; i++) {
     var m = metadata[i];
     var exactResult = exactResults[m.email];
 
     // 如果精确匹配失败
     if (!exactResult) {
+      // 声誉命中直接使用
+      if (m.reputation && m.reputation.category) {
+        continue; // 将在后面结果合成处处理
+      }
       needDomainMatch.push(i);
 
       // 生成域名匹配查询
@@ -411,6 +501,17 @@ function classifyBatch(messages) {
       continue;
     }
 
+    // Reputation: 命中则使用
+    if (m.reputation && m.reputation.category) {
+      results.push({
+        message: msg,
+        category: m.reputation.category,
+        source: 'reputation',
+        method: 'local_reputation'
+      });
+      continue;
+    }
+
     // Level 2: 域名匹配
     var patterns = domainQueryMap[m.email];
     var domainMatched = false;
@@ -440,6 +541,12 @@ function classifyBatch(messages) {
         source: 'heuristic',
         method: heuristicResult.method
       });
+      // 写回信誉
+      if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableReputation) {
+        var repKeyB = m.domain || m.email;
+        var scoreToCacheB = (heuristicResult.score || 0);
+        updateLocalReputation(repKeyB, heuristicResult.category, scoreToCacheB);
+      }
       continue;
     }
 

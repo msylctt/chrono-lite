@@ -104,3 +104,12 @@ const SENDER_CONTEXT_WEIGHTS = {
   subdomain_positive: 12,
   subdomain_negative: -15
 };
+
+/**
+ * 本地信誉缓存配置（PropertiesService）
+ */
+const REPUTATION_CONFIG = {
+  ttlDays: 30,             // 过期时间（天）
+  minScoreToCache: 15,     // 仅当决策分数≥该值时写入信誉
+  maxEntries: 2000         // 软上限（未强制执行）
+};

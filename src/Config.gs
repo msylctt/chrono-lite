@@ -89,3 +89,18 @@ const CLASSIFIER_THRESHOLD = 15;
  * 日志采样（0-1），用于控制结构化日志输出频率
  */
 const LOG_SAMPLING_RATE = 1.0;
+
+/**
+ * 发件人上下文（子域名意图）配置
+ */
+const SUBDOMAIN_POSITIVE = [
+  'promo', 'news', 'newsletter', 'updates', 'info', 'email', 'go', 'e', 'hello'
+];
+const SUBDOMAIN_NEGATIVE = [
+  'auth', 'support', 'billing', 'security', 'app', 'my', 'account'
+];
+
+const SENDER_CONTEXT_WEIGHTS = {
+  subdomain_positive: 12,
+  subdomain_negative: -15
+};

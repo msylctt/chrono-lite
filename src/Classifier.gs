@@ -36,6 +36,55 @@ function extractEmail(fromString) {
 }
 
 /**
+ * 规范化邮箱：小写、移除 + 别名、Gmail 本地部分去点
+ */
+function normalizeEmail(email) {
+  if (!email) return '';
+  var lower = (email + '').toLowerCase().trim();
+  var parts = lower.split('@');
+  if (parts.length !== 2) return lower;
+  var local = parts[0];
+  var domain = parts[1];
+  // 移除 + 别名
+  var plusIdx = local.indexOf('+');
+  if (plusIdx >= 0) {
+    local = local.substring(0, plusIdx);
+  }
+  // Gmail 本地部分去点
+  if (domain === 'gmail.com' || domain === 'googlemail.com') {
+    local = local.replace(/\./g, '');
+  }
+  return local + '@' + domain;
+}
+
+/**
+ * 子域名意图评分
+ */
+function scoreSubdomainIntent(domain) {
+  if (!domain) return { score: 0, features: [] };
+  var features = [];
+  var score = 0;
+  var segments = domain.split('.');
+  if (segments.length <= 2) return { score: 0, features: [] }; // 无子域
+  var sub = segments.slice(0, segments.length - 2).join('.');
+  for (var i = 0; i < SUBDOMAIN_POSITIVE.length; i++) {
+    var kw = SUBDOMAIN_POSITIVE[i];
+    if (sub.indexOf(kw) !== -1) {
+      score += SENDER_CONTEXT_WEIGHTS.subdomain_positive;
+      features.push('subdomain+' + kw);
+    }
+  }
+  for (var j = 0; j < SUBDOMAIN_NEGATIVE.length; j++) {
+    var nk = SUBDOMAIN_NEGATIVE[j];
+    if (sub.indexOf(nk) !== -1) {
+      score += SENDER_CONTEXT_WEIGHTS.subdomain_negative;
+      features.push('subdomain-' + nk);
+    }
+  }
+  return { score: score, features: features };
+}
+
+/**
  * Level 1: 精确匹配
  */
 function classifyByExactMatch(email) {
@@ -98,6 +147,8 @@ function classifyByDomain(email) {
 function classifyByHeuristics(message) {
   var subject = message.getSubject();
   var from = message.getFrom().toLowerCase();
+  var email = extractEmail(from);
+  var domain = email.split('@')[1];
 
   // 头部启发式（Phase A）：仅在开启时计算
   if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableHeaders) {
@@ -165,6 +216,15 @@ function classifyByHeuristics(message) {
       }
     } catch (e7) {}
 
+    // Phase B: 子域名意图
+    if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableSenderContext && domain) {
+      var ctx = scoreSubdomainIntent(domain);
+      if (ctx.score !== 0) {
+        score += ctx.score;
+        features = features.concat(ctx.features);
+      }
+    }
+
     if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableScoring && score >= CLASSIFIER_THRESHOLD) {
       return {
         category: 'Newsletter',
@@ -216,6 +276,7 @@ function classifyByHeuristics(message) {
  */
 function classifyEmail(message) {
   var senderEmail = extractEmail(message.getFrom());
+  var normalized = (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableSenderContext) ? normalizeEmail(senderEmail) : senderEmail;
 
   // Level 1: 精确匹配
   var exactResult = classifyByExactMatch(senderEmail);
@@ -224,7 +285,7 @@ function classifyEmail(message) {
   }
 
   // Level 2: 域名匹配
-  var domainResult = classifyByDomain(senderEmail);
+  var domainResult = classifyByDomain(normalized);
   if (domainResult) {
     return domainResult;
   }
@@ -248,11 +309,12 @@ function classifyBatch(messages) {
   var metadata = messages.map(function(msg) {
     var from = msg.getFrom();
     var email = extractEmail(from);
+    var normalized = (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableSenderContext) ? normalizeEmail(email) : email;
     var domain = email.split('@')[1];
 
     return {
       from: from.toLowerCase(),
-      email: email,
+      email: normalized,
       domain: domain,
       subject: msg.getSubject(),
       unsubscribe: null,
@@ -404,6 +466,7 @@ function applyBatchHeuristics(metadata) {
   var listUnsubscribePost = metadata.listUnsubscribePost;
   var xSmtpapi = metadata.xSmtpapi;
   var xCampaignId = metadata.xCampaignId;
+  var domain = metadata.domain;
 
   // Phase A: 头部评分（批量路径下）
   if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableHeaders) {
@@ -437,6 +500,15 @@ function applyBatchHeuristics(metadata) {
     if (xCampaignId) {
       score += HEADER_WEIGHTS.x_campaign_id;
       features.push('x_campaign_id');
+    }
+
+    // Phase B: 子域名意图
+    if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableSenderContext && domain) {
+      var ctx = scoreSubdomainIntent(domain);
+      if (ctx.score !== 0) {
+        score += ctx.score;
+        features = features.concat(ctx.features);
+      }
     }
 
     if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableScoring && score >= CLASSIFIER_THRESHOLD) {
@@ -652,7 +724,7 @@ function runPhase2Tests() {
 
   // 清空域名缓存
   _domainCache = {};
-
+  
   var results = {
     phase: 'Phase 2',
     tests: [],

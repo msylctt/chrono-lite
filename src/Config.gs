@@ -55,3 +55,37 @@ const CATEGORIES = {
  */
 const TEST_LABEL = 'Chrono/Test'; // 测试标签
 const TEST_EMAIL_COUNT = 10;       // 测试邮件数量
+
+/**
+ * 分类器特性开关（渐进式发布）
+ */
+const FEATURE_FLAGS = {
+  enableHeaders: true,          // Phase A: 启用高置信度头部启发式
+  enableSenderContext: false,   // Phase B: 发件人规范化与子域意图
+  enableReputation: false,      // Phase C: 本地信誉缓存
+  enableContent: true,          // Phase D: 轻量内容启发式
+  enableScoring: true           // Phase E: 评分与阈值
+};
+
+/**
+ * 头部启发式权重（初始值，可在线微调）
+ */
+const HEADER_WEIGHTS = {
+  list_unsubscribe_post: 20,   // RFC 8058 一键退订
+  list_unsubscribe: 9,         // RFC 2369
+  list_id: 9,                  // RFC 2919
+  precedence_bulk: 8,          // 事实标准：bulk/list/junk
+  x_smtpapi: 9,                // SendGrid 指纹
+  x_campaign_id: 7,            // 通用活动追踪头
+  auto_submitted_negative: -20 // RFC 3834 自动回复（非 no）
+};
+
+/**
+ * 分类阈值（加权求和超过此值触发分类）
+ */
+const CLASSIFIER_THRESHOLD = 15;
+
+/**
+ * 日志采样（0-1），用于控制结构化日志输出频率
+ */
+const LOG_SAMPLING_RATE = 1.0;

@@ -85,18 +85,82 @@ function classifyByHeuristics(message) {
   var subject = message.getSubject();
   var from = message.getFrom().toLowerCase();
 
-  // 规则 1: List-Unsubscribe 头部（使用轻量级 API）
-  try {
-    var unsubscribeHeader = message.getHeader('List-Unsubscribe');
-    if (unsubscribeHeader) {
+  // 头部启发式（Phase A）：仅在开启时计算
+  if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableHeaders) {
+    var score = 0;
+    var features = [];
+
+    // 负面信号优先：Auto-Submitted
+    try {
+      var autoSubmitted = message.getHeader('Auto-Submitted');
+      if (autoSubmitted && /^(?!no$).+/i.test((autoSubmitted + '').trim())) {
+        score += HEADER_WEIGHTS.auto_submitted_negative;
+        features.push('auto_submitted');
+      }
+    } catch (e1) {}
+
+    // List-Unsubscribe-Post (RFC 8058)
+    try {
+      var lup = message.getHeader('List-Unsubscribe-Post');
+      if (lup && /one-click/i.test(lup)) {
+        score += HEADER_WEIGHTS.list_unsubscribe_post;
+        features.push('list_unsubscribe_post');
+      }
+    } catch (e2) {}
+
+    // List-Unsubscribe (RFC 2369)
+    try {
+      var lu = message.getHeader('List-Unsubscribe');
+      if (lu) {
+        score += HEADER_WEIGHTS.list_unsubscribe;
+        features.push('list_unsubscribe');
+      }
+    } catch (e3) {}
+
+    // List-Id (RFC 2919)
+    try {
+      var lid = message.getHeader('List-Id');
+      if (lid) {
+        score += HEADER_WEIGHTS.list_id;
+        features.push('list_id');
+      }
+    } catch (e4) {}
+
+    // Precedence
+    try {
+      var prec = message.getHeader('Precedence');
+      if (prec && /bulk|list|junk/i.test(prec)) {
+        score += HEADER_WEIGHTS.precedence_bulk;
+        features.push('precedence_bulk');
+      }
+    } catch (e5) {}
+
+    // 常见 ESP 指纹（可选）
+    try {
+      var xsmtp = message.getHeader('X-SMTPAPI');
+      if (xsmtp) {
+        score += HEADER_WEIGHTS.x_smtpapi;
+        features.push('x_smtpapi');
+      }
+    } catch (e6) {}
+    try {
+      var xcid = message.getHeader('X-Campaign-ID');
+      if (xcid) {
+        score += HEADER_WEIGHTS.x_campaign_id;
+        features.push('x_campaign_id');
+      }
+    } catch (e7) {}
+
+    if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableScoring && score >= CLASSIFIER_THRESHOLD) {
       return {
         category: 'Newsletter',
         source: 'heuristic',
-        method: 'list_unsubscribe_header'
+        method: 'headers_scoring',
+        score: score,
+        threshold: CLASSIFIER_THRESHOLD,
+        features: features
       };
     }
-  } catch (e) {
-    // 某些邮件可能没有此头部，继续下一条规则
   }
 
   // 规则 2: Newsletter 平台域名
@@ -194,7 +258,13 @@ function classifyBatch(messages) {
       email: email,
       domain: domain,
       subject: msg.getSubject(),
-      unsubscribe: null
+      unsubscribe: null,
+      autoSubmitted: null,
+      listId: null,
+      precedence: null,
+      listUnsubscribePost: null,
+      xSmtpapi: null,
+      xCampaignId: null
     };
   });
 
@@ -235,7 +305,7 @@ function classifyBatch(messages) {
     domainResults = queryBatch(domainQueries);
   }
 
-  // 5. 批量获取 List-Unsubscribe 头部（仅对需要启发式规则的邮件）
+  // 5. 批量获取必要头部（仅对需要启发式规则的邮件）
   var needHeuristics = [];
   for (var j = 0; j < needDomainMatch.length; j++) {
     var idx = needDomainMatch[j];
@@ -253,13 +323,14 @@ function classifyBatch(messages) {
 
     if (!domainMatched) {
       needHeuristics.push(idx);
-      // 尝试获取 List-Unsubscribe 头部
-      try {
-        var header = messages[idx].getHeader('List-Unsubscribe');
-        metadata[idx].unsubscribe = header;
-      } catch (e) {
-        metadata[idx].unsubscribe = null;
-      }
+      // 仅在必要时读取关键头部（Phase A）
+      try { metadata[idx].autoSubmitted = messages[idx].getHeader('Auto-Submitted'); } catch (e1) { metadata[idx].autoSubmitted = null; }
+      try { metadata[idx].listUnsubscribePost = messages[idx].getHeader('List-Unsubscribe-Post'); } catch (e2) { metadata[idx].listUnsubscribePost = null; }
+      try { metadata[idx].unsubscribe = messages[idx].getHeader('List-Unsubscribe'); } catch (e3) { metadata[idx].unsubscribe = null; }
+      try { metadata[idx].listId = messages[idx].getHeader('List-Id'); } catch (e4) { metadata[idx].listId = null; }
+      try { metadata[idx].precedence = messages[idx].getHeader('Precedence'); } catch (e5) { metadata[idx].precedence = null; }
+      try { metadata[idx].xSmtpapi = messages[idx].getHeader('X-SMTPAPI'); } catch (e6) { metadata[idx].xSmtpapi = null; }
+      try { metadata[idx].xCampaignId = messages[idx].getHeader('X-Campaign-ID'); } catch (e7) { metadata[idx].xCampaignId = null; }
     }
   }
 
@@ -330,13 +401,53 @@ function applyBatchHeuristics(metadata) {
   var subject = metadata.subject;
   var from = metadata.from;
   var unsubscribe = metadata.unsubscribe;
+  var autoSubmitted = metadata.autoSubmitted;
+  var listId = metadata.listId;
+  var precedence = metadata.precedence;
+  var listUnsubscribePost = metadata.listUnsubscribePost;
+  var xSmtpapi = metadata.xSmtpapi;
+  var xCampaignId = metadata.xCampaignId;
 
-  // 规则 1: List-Unsubscribe 头部
-  if (unsubscribe) {
-    return {
-      category: 'Newsletter',
-      method: 'list_unsubscribe_header'
-    };
+  // Phase A: 头部评分（批量路径下）
+  if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableHeaders) {
+    var score = 0;
+    var features = [];
+
+    if (autoSubmitted && /^(?!no$).+/i.test((autoSubmitted + '').trim())) {
+      score += HEADER_WEIGHTS.auto_submitted_negative;
+      features.push('auto_submitted');
+    }
+    if (listUnsubscribePost && /one-click/i.test(listUnsubscribePost)) {
+      score += HEADER_WEIGHTS.list_unsubscribe_post;
+      features.push('list_unsubscribe_post');
+    }
+    if (unsubscribe) {
+      score += HEADER_WEIGHTS.list_unsubscribe;
+      features.push('list_unsubscribe');
+    }
+    if (listId) {
+      score += HEADER_WEIGHTS.list_id;
+      features.push('list_id');
+    }
+    if (precedence && /bulk|list|junk/i.test(precedence)) {
+      score += HEADER_WEIGHTS.precedence_bulk;
+      features.push('precedence_bulk');
+    }
+    if (xSmtpapi) {
+      score += HEADER_WEIGHTS.x_smtpapi;
+      features.push('x_smtpapi');
+    }
+    if (xCampaignId) {
+      score += HEADER_WEIGHTS.x_campaign_id;
+      features.push('x_campaign_id');
+    }
+
+    if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableScoring && score >= CLASSIFIER_THRESHOLD) {
+      return {
+        category: 'Newsletter',
+        method: 'headers_scoring'
+      };
+    }
   }
 
   // 规则 2: Newsletter 平台域名

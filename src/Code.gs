@@ -958,6 +958,22 @@ function sendClassifierTestBatch() {
         body: 'Product update summary for this month. ' + footerUnsub,
         displayName: 'updates@product.example',
         replyTo: 'updates@test.example'
+      },
+      // Travel - Flight
+      {
+        name: 'Travel Flight',
+        subject: '[Test] Flight itinerary and boarding pass - ' + ts,
+        body: 'Your flight itinerary is confirmed. Boarding pass available soon.',
+        displayName: 'no-reply@airline.example',
+        replyTo: 'support@airline.example'
+      },
+      // Travel - Hotel
+      {
+        name: 'Travel Hotel',
+        subject: '[Test] Hotel reservation confirmation - ' + ts,
+        body: 'Your hotel booking has been confirmed. Check-in details enclosed.',
+        displayName: 'booking@hotel.example',
+        replyTo: 'booking@hotel.example'
       }
     ];
 

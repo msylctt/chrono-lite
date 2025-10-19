@@ -76,6 +76,17 @@ function applyCategory(thread, categoryName) {
       keep_inbox: policy ? policy.keepInbox : undefined
     });
 
+    // 5. 行程与交易到期策略占位（仅日志，不实际归档）
+    try {
+      if (policy && policy.autoArchiveRule) {
+        Log.info(Log.Module.ACTION, 'autoArchive placeholder', {
+          thread_id: threadId,
+          category: categoryName,
+          rule: JSON.stringify(policy.autoArchiveRule)
+        });
+      }
+    } catch (e3) { /* ignore */ }
+
     return true;
 
   } catch (error) {

@@ -496,6 +496,19 @@ function classifyEmail(message) {
     return commerceResult;
   }
 
+  // US3: 行程识别（航班/酒店）
+  var travelResult = classifyTravel(message);
+  if (travelResult) {
+    if (shouldLogSample()) {
+      Log.info(Log.Module.CLASSIFIER, 'classified (travel)', {
+        layer: 'T1',
+        method: travelResult.method,
+        category: travelResult.category
+      });
+    }
+    return travelResult;
+  }
+
   // Level 3: 启发式规则
   var heuristicResult = classifyByHeuristics(message);
   if (heuristicResult) {
@@ -928,6 +941,24 @@ function classifyCommerce(message) {
     return { category: 'Finance/Bills', source: 'heuristic', method: 'bills_subject' };
   }
 
+  return null;
+}
+
+/**
+ * US3: 行程识别（航班/酒店）
+ */
+function classifyTravel(message) {
+  var subject = '';
+  try { subject = (message.getSubject() || '').toLowerCase(); } catch (e) { subject = ''; }
+
+  // 航班
+  if (/(flight|itinerary|boarding pass|departure|arrival|机票|航班|行程)/i.test(subject)) {
+    return { category: 'Travel/Flights', source: 'heuristic', method: 'flight_subject' };
+  }
+  // 酒店
+  if (/(hotel|reservation|booking|check-in|check out|入住|预订|酒店)/i.test(subject)) {
+    return { category: 'Travel/Hotels', source: 'heuristic', method: 'hotel_subject' };
+  }
   return null;
 }
 /**

@@ -127,11 +127,11 @@ Story Goal
 Independent Test Criteria（非任务）
 - 含出行日期样本在行程前被凸显，结束后 +1 日自动归档。
 
-T016: 行程识别（主题/发件人上下文）
+T016: [X] 行程识别（主题/发件人上下文）
 - Path: `/Users/darrenma/Documents/chrono-lite/src/Classifier.gs`
 - Action: 主题关键词（itinerary/flight/hotel/booking/reservation 等）+ 子域上下文打分；分类到 `Travel/Flights`、`Travel/Hotels`。
 
-T017: 行程前凸显与结束清理
+T017: [X] 行程前凸显与结束清理
 - Path: `/Users/darrenma/Documents/chrono-lite/src/Actions.gs`
 - Action: 行程前可选加星（由偏好控制）；结束 +1 日根据策略自动归档。
 

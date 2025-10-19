@@ -874,3 +874,117 @@ function getDebugModeStatus() {
     lastEmail: lastEmail
   };
 }
+
+/**
+ * 发送一批分类器测试邮件到当前用户邮箱（手动运行）
+ * 覆盖：Newsletter / Marketing / OTP / Orders / Shipping / Bills / Footer Unsubscribe / Product Updates
+ */
+function sendClassifierTestBatch() {
+  var op = Log.operation(Log.Module.DEBUG_MODE, 'sendClassifierTestBatch');
+
+  try {
+    var userEmail = Session.getActiveUser().getEmail();
+    if (!userEmail) {
+      op.fail(new Error('Unable to get active user email'), {});
+      return;
+    }
+
+    var now = new Date();
+    var ts = Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+
+    var footerUnsub = '\n\n—\nManage preferences | Unsubscribe\nIf you wish to unsubscribe, click here.';
+
+    var cases = [
+      // Newsletter via subject keywords + footer unsubscribe
+      {
+        name: 'Newsletter',
+        subject: '[Test] Weekly Digest Newsletter - ' + ts,
+        body: 'This is a newsletter test email.\nIt should match newsletter heuristics. ' + footerUnsub,
+        displayName: 'newsletter@substack.com',
+        replyTo: 'newsletter@test.example'
+      },
+      // Marketing via subject keywords
+      {
+        name: 'Marketing',
+        subject: '[Test] Big SALE today: exclusive discount offer - ' + ts,
+        body: 'Limited-time sale and discount offer!',
+        displayName: 'mailer@mailchimp.com',
+        replyTo: 'offers@test.example'
+      },
+      // Security / OTP via subject + body fallback
+      {
+        name: 'Security OTP',
+        subject: '[Test] Your verification code (OTP) - ' + ts,
+        body: 'Your verification code is 123456.\nAlternatively, code: 654321',
+        displayName: 'no-reply@security.example',
+        replyTo: 'security@test.example'
+      },
+      // Orders
+      {
+        name: 'Order',
+        subject: '[Test] Order confirmation #12345 and receipt - ' + ts,
+        body: 'Thanks for your purchase. This email confirms your order.',
+        displayName: 'orders@shop.example',
+        replyTo: 'orders@test.example'
+      },
+      // Shipping
+      {
+        name: 'Shipping',
+        subject: '[Test] Shipping update: tracking available - ' + ts,
+        body: 'Your item has shipped. Tracking number: 1Z999AA10123456784',
+        displayName: 'shipping@shop.example',
+        replyTo: 'shipping@test.example'
+      },
+      // Bills / Invoice / Due
+      {
+        name: 'Bills',
+        subject: '[Test] Invoice statement and payment due - ' + ts,
+        body: 'Your bill is due soon. Invoice attached (simulated).',
+        displayName: 'billing@service.example',
+        replyTo: 'billing@test.example'
+      },
+      // Footer Unsubscribe only (content-layer)
+      {
+        name: 'Footer Unsubscribe',
+        subject: '[Test] Latest updates - ' + ts,
+        body: 'Here are the latest updates.' + footerUnsub,
+        displayName: 'nl@brand.example',
+        replyTo: 'newsletter@test.example'
+      },
+      // Product Updates (update summary)
+      {
+        name: 'Product Updates',
+        subject: '[Test] Monthly update summary - ' + ts,
+        body: 'Product update summary for this month. ' + footerUnsub,
+        displayName: 'updates@product.example',
+        replyTo: 'updates@test.example'
+      }
+    ];
+
+    var sent = 0;
+    for (var i = 0; i < cases.length; i++) {
+      var c = cases[i];
+      try {
+        GmailApp.sendEmail(
+          userEmail,
+          c.subject,
+          c.body,
+          {
+            from: userEmail, // 使用自身地址（别名未配置时忽略）
+            name: c.displayName,
+            replyTo: c.replyTo
+          }
+        );
+        Utilities.sleep(250); // 轻微节流
+        sent++;
+      } catch (eSend) {
+        Log.warn(Log.Module.DEBUG_MODE, 'Test email send failed', { name: c.name, error: eSend.message });
+      }
+    }
+
+    op.success({ total: cases.length, sent: sent });
+
+  } catch (error) {
+    op.fail(error, {});
+  }
+}

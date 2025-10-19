@@ -876,6 +876,53 @@ function getDebugModeStatus() {
 }
 
 /**
+ * 清空测试邮件数据（将匹配到的测试线程移入回收站，并清理调试属性与触发器）
+ * @param {number} days 可选，仅清理最近 N 天（默认 30 天）
+ */
+function clearClassifierTestData(days) {
+  var op = Log.operation(Log.Module.DEBUG_MODE, 'clearClassifierTestData');
+
+  try {
+    var userEmail = Session.getActiveUser().getEmail();
+    var n = (typeof days === 'number' && days > 0) ? Math.floor(days) : 30;
+
+    // 仅清理我们生成的测试邮件：主题前缀为 [Test] 且发件人为当前账户
+    var query = 'subject:"[Test]" from:(' + userEmail + ') newer_than:' + n + 'd';
+    var threads = GmailApp.search(query, 0, 500);
+
+    var removed = 0;
+    var testLabel = GmailApp.getUserLabelByName(TEST_LABEL);
+
+    for (var i = 0; i < threads.length; i++) {
+      try {
+        if (testLabel) {
+          try { threads[i].removeLabel(testLabel); } catch (eLab) { /* ignore */ }
+        }
+        threads[i].moveToTrash();
+        removed++;
+      } catch (eMove) {
+        Log.warn(Log.Module.DEBUG_MODE, 'Move to trash failed', { error: eMove.message });
+      }
+    }
+
+    // 清理 Debug 属性
+    try {
+      var props = PropertiesService.getUserProperties();
+      props.deleteProperty('chrono_debug_last_email');
+      props.deleteProperty('chrono_debug_mode');
+      props.deleteProperty('chrono_debug_enabled_at');
+    } catch (eProps) { /* ignore */ }
+
+    // 关闭 Debug 邮件触发器（如存在）
+    try { deleteDebugEmailTrigger(); } catch (eTrig) { /* ignore */ }
+
+    op.success({ query: query, found: threads.length, removed: removed });
+
+  } catch (error) {
+    op.fail(error, {});
+  }
+}
+/**
  * 发送一批分类器测试邮件到当前用户邮箱（手动运行）
  * 覆盖：Newsletter / Marketing / OTP / Orders / Shipping / Bills / Footer Unsubscribe / Product Updates
  */

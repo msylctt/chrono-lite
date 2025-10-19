@@ -393,6 +393,27 @@ function classifyEmail(message) {
   var normalized = (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableSenderContext) ? normalizeEmail(senderEmail) : senderEmail;
   var normDomain = (normalized && normalized.indexOf('@') !== -1) ? normalized.split('@')[1] : null;
 
+  // L0: 系统自动回复前置排除（Auto-Submitted 存在且非 no）
+  try {
+    var autoSubmittedL0 = message.getHeader && message.getHeader('Auto-Submitted');
+    if (autoSubmittedL0 && /^(?!no$).+/i.test((autoSubmittedL0 + '').trim())) {
+      if (shouldLogSample()) {
+        Log.info(Log.Module.CLASSIFIER, 'classified (auto-reply/L0)', {
+          layer: 'L0',
+          method: 'auto_submitted',
+          category: 'System/Auto-Replies',
+          sender: normalized,
+          domain: normDomain
+        });
+      }
+      return {
+        category: 'System/Auto-Replies',
+        source: 'heuristic',
+        method: 'auto_submitted'
+      };
+    }
+  } catch (eL0) { /* ignore */ }
+
   // Phase C: 信誉快速路径
   if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableReputation) {
     var repKey = normalized.split('@')[1] || normalized; // 优先按域名缓存
@@ -443,6 +464,36 @@ function classifyEmail(message) {
       });
     }
     return domainResult;
+  }
+
+  // US2: 安全/验证码识别（优先于广播类）
+  var securityResult = classifySecurity(message);
+  if (securityResult) {
+    if (shouldLogSample()) {
+      Log.info(Log.Module.CLASSIFIER, 'classified (security)', {
+        layer: 'S1',
+        method: securityResult.method,
+        category: securityResult.category,
+        sender: normalized,
+        domain: normDomain
+      });
+    }
+    return securityResult;
+  }
+
+  // US2: 订单/物流/账单识别（优先于广播类）
+  var commerceResult = classifyCommerce(message);
+  if (commerceResult) {
+    if (shouldLogSample()) {
+      Log.info(Log.Module.CLASSIFIER, 'classified (commerce)', {
+        layer: 'C1',
+        method: commerceResult.method,
+        category: commerceResult.category,
+        sender: normalized,
+        domain: normDomain
+      });
+    }
+    return commerceResult;
   }
 
   // Level 3: 启发式规则
@@ -812,6 +863,73 @@ function applyBatchHeuristics(metadata) {
   return null;
 }
 
+/**
+ * US2: 安全/验证码识别
+ */
+function classifySecurity(message) {
+  try {
+    // 负信号：存在退订头则降权（此处直接排除安全，交由广播类处理）
+    var listUnsub = message.getHeader && message.getHeader('List-Unsubscribe');
+    if (listUnsub) {
+      // 有明显退订一般不是安全/验证码
+      // 不直接返回，继续看主题是否强命中安全
+    }
+  } catch (e1) { /* ignore */ }
+
+  var subject = '';
+  try { subject = (message.getSubject() || '').toLowerCase(); } catch (e2) { subject = ''; }
+
+  if (/(验证码|one[- ]time password|otp|verification code|security code|password reset)/i.test(subject)) {
+    return {
+      category: 'Finance/Security',
+      source: 'heuristic',
+      method: 'security_subject'
+    };
+  }
+
+  // 可选回退：正文前 2KB 抽取验证码（仅当主题不命中时使用）
+  try {
+    if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableContent) {
+      var body = message.getPlainBody ? message.getPlainBody() : (message.getBody ? message.getBody() : '');
+      if (body) {
+        var head = body.substring(0, Math.min(2048, body.length));
+        var m = head.match(/(?:code|验证码)[:\s]*([0-9]{4,8})/i);
+        if (m) {
+          return {
+            category: 'Finance/Security',
+            source: 'heuristic',
+            method: 'security_body_code'
+          };
+        }
+      }
+    }
+  } catch (e3) { /* ignore */ }
+
+  return null;
+}
+
+/**
+ * US2: 订单/物流/账单识别
+ */
+function classifyCommerce(message) {
+  var subject = '';
+  try { subject = (message.getSubject() || '').toLowerCase(); } catch (e2) { subject = ''; }
+
+  // 订单
+  if (/(order|订单|purchase|receipt|发票|invoice)/i.test(subject)) {
+    return { category: 'Purchases/Orders', source: 'heuristic', method: 'orders_subject' };
+  }
+  // 物流
+  if (/(shipping|发货|配送|已发出|tracking|物流)/i.test(subject)) {
+    return { category: 'Purchases/Shipping', source: 'heuristic', method: 'shipping_subject' };
+  }
+  // 账单
+  if (/(bill|账单|invoice|due|payment due|statement)/i.test(subject)) {
+    return { category: 'Finance/Bills', source: 'heuristic', method: 'bills_subject' };
+  }
+
+  return null;
+}
 /**
  * 测试邮箱提取
  */

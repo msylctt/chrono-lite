@@ -79,7 +79,7 @@ T010: 评分与阈值裁决（US1 范围）
 - Path: `/Users/darrenma/Documents/chrono-lite/src/Classifier.gs`
 - Action: 简单加权求和；与 `Config.gs` 阈值比较，生成候选 `Updates/Newsletters` 或 `Updates/Promotions`；与高优先场景冲突时让位。
 
-T011: 应用动作策略（US1）
+T011: [X] 应用动作策略（US1）
 - Path: `/Users/darrenma/Documents/chrono-lite/src/Actions.gs`
 - Action: 依据 `CATEGORY_POLICIES` 应用标签；默认不跳过收件箱、不标记已读；尊重偏好设置。
 
@@ -95,11 +95,11 @@ Story Goal
 Independent Test Criteria（非任务）
 - 安全/验证码不被降噪；订单/物流/账单正确分类并在到期后自动归档。
 
-T012: L0 排除类（系统自动回复前置排除） [P]
+T012: [X] L0 排除类（系统自动回复前置排除） [P]
 - Path: `/Users/darrenma/Documents/chrono-lite/src/Classifier.gs`
 - Action: 若 `Auto-Submitted` 存在且不为 `no`，直接归 `System/Auto-Replies` 并早退。
 
-T013: 安全/验证码识别（L1-L4）
+T013: [X] 安全/验证码识别（L1-L4）
 - Path: `/Users/darrenma/Documents/chrono-lite/src/Classifier.gs`
 - Action: 按 `plan.md` OTP 方案：
   - 负信号：存在 `List-Unsubscribe` 时降权。
@@ -107,7 +107,7 @@ T013: 安全/验证码识别（L1-L4）
   - 必要时正文前 2KB 抽取 4–8 位验证码（回退）。
   - 与广播冲突时优先安全。
 
-T014: 订单/物流/账单识别（结构化关键词与发件人上下文） [P]
+T014: [X] 订单/物流/账单识别（结构化关键词与发件人上下文） [P]
 - Path: `/Users/darrenma/Documents/chrono-lite/src/Classifier.gs`
 - Action: 主题与子域词典驱动（orders/shipping/invoice/bill/receipt/tracking 等）；与 `CATEGORY_POLICIES` 映射到 `Purchases/Orders`, `Purchases/Shipping`, `Finance/Bills`。
 

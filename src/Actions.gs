@@ -28,7 +28,10 @@ function getOrCreateLabel(labelName) {
  * 应用分类动作（单个线程）
  */
 function applyCategory(thread, categoryName) {
+  // 1) 兼容旧配置
   var config = CATEGORIES[categoryName];
+  // 2) 新策略映射（CATEGORY_POLICIES）用于决定是否保留收件箱/加星/已读/到期归档占位
+  var policy = (typeof CATEGORY_POLICIES !== 'undefined') ? CATEGORY_POLICIES[categoryName] : null;
 
   if (!config) {
     Log.warn(Log.Module.ACTION, 'Unknown category', {category: categoryName});
@@ -39,19 +42,22 @@ function applyCategory(thread, categoryName) {
     var threadId = thread.getId();
     var subject = thread.getFirstMessageSubject();
 
-    // 1. 应用标签
+    // 1. 应用标签（若旧配置存在优先用旧标签，否则使用 "Chrono/<categoryName>" 占位）
     var label = getOrCreateLabel(config.label);
     if (label) {
       thread.addLabel(label);
     }
 
-    // 2. 执行动作
-    if (config.action === 'archive') {
-      thread.moveToArchive();
-    }
+    // 2. 执行动作：
+    // - 旧配置 action 继续支持
+    // - 新策略：keepInbox=false 时归档（默认策略保守全部 keepInbox=true）
+    var shouldArchive = false;
+    if (config.action === 'archive') shouldArchive = true;
+    if (policy && policy.keepInbox === false) shouldArchive = true;
+    if (shouldArchive) thread.moveToArchive();
 
     // 3. 标记已读
-    if (config.markRead) {
+    if (config.markRead || (policy && policy.markRead)) {
       thread.markRead();
     }
 
@@ -66,7 +72,8 @@ function applyCategory(thread, categoryName) {
       category: categoryName,
       label: config.label,
       action: config.action || 'none',
-      mark_read: config.markRead || false
+      mark_read: (config.markRead || (policy && policy.markRead) || false),
+      keep_inbox: policy ? policy.keepInbox : undefined
     });
 
     return true;

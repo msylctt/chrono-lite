@@ -71,6 +71,27 @@ function normalizeEmail(email) {
 }
 
 /**
+ * 别名：符合 tasks.md 中的命名
+ */
+function normalizeEmailAddress(str) {
+  return normalizeEmail(str);
+}
+
+/**
+ * 提取域名与子域列表
+ * 返回 { domain: string, subdomainParts: string[] }
+ */
+function extractDomainAndSubdomain(email) {
+  if (!email) return { domain: '', subdomainParts: [] };
+  var idx = email.indexOf('@');
+  if (idx === -1) return { domain: '', subdomainParts: [] };
+  var domain = email.substring(idx + 1).toLowerCase();
+  var parts = domain.split('.');
+  if (parts.length <= 2) return { domain: domain, subdomainParts: [] };
+  return { domain: domain, subdomainParts: parts.slice(0, parts.length - 2) };
+}
+
+/**
  * 子域名意图评分
  */
 function scoreSubdomainIntent(domain) {
@@ -375,7 +396,7 @@ function classifyEmail(message) {
   // Phase C: 信誉快速路径
   if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableReputation) {
     var repKey = normalized.split('@')[1] || normalized; // 优先按域名缓存
-    var rep = readReputation(repKey);
+    var rep = getSenderReputation(repKey);
     if (rep && rep.category) {
       if (shouldLogSample()) {
         Log.info(Log.Module.CLASSIFIER, 'classified (reputation)', {
@@ -442,7 +463,7 @@ function classifyEmail(message) {
     if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableReputation) {
       var repKey2 = normalized.split('@')[1] || normalized;
       var scoreToCache = (heuristicResult.score || 0);
-      updateLocalReputation(repKey2, heuristicResult.category, scoreToCache);
+      putSenderReputation(repKey2, { category: heuristicResult.category, score: scoreToCache });
     }
     return heuristicResult;
   }
@@ -656,7 +677,7 @@ function classifyBatch(messages) {
       if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableReputation) {
         var repKeyB = m.domain || m.email;
         var scoreToCacheB = (heuristicResult.score || 0);
-        updateLocalReputation(repKeyB, heuristicResult.category, scoreToCacheB);
+        putSenderReputation(repKeyB, { category: heuristicResult.category, score: scoreToCacheB });
       }
       continue;
     }

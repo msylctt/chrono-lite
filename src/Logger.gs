@@ -79,6 +79,29 @@ var Log = (function() {
     Level: Level,
     Module: Module,
 
+    /**
+     * 决策摘要（结构化）
+     * @param {Object} summary {messageId, layer, matchedSignals, score, threshold, finalCategory, actionPolicy}
+     */
+    logDecisionSummary: function(summary) {
+      try {
+        if (!summary) summary = {};
+        var sample = (typeof LOG_SAMPLING_RATE !== 'undefined') ? LOG_SAMPLING_RATE : 1.0;
+        if (Math.random() > sample) return;
+        var meta = {
+          layer: summary.layer || 'N/A',
+          matched_signals: summary.matchedSignals || [],
+          score: typeof summary.score === 'number' ? summary.score : undefined,
+          threshold: typeof summary.threshold === 'number' ? summary.threshold : undefined,
+          final_category: summary.finalCategory || 'N/A',
+          action_policy: summary.actionPolicy || null,
+          message_id: summary.messageId || undefined
+        };
+        log(Level.INFO, Module.CLASSIFIER, 'decision summary', meta);
+      } catch (e) {
+        log(Level.WARN, Module.CLASSIFIER, 'decision summary failed', { error: e.message });
+      }
+    },
     // 便捷方法
     error: function(module, message, meta) {
       // ERROR 始终输出

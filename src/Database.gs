@@ -334,6 +334,50 @@ function clearSenderCache() {
 }
 
 /**
+ * 本地信誉缓存（PropertiesService）
+ * getSenderReputation/putSenderReputation 提供统一读写入口
+ */
+function getSenderReputation(key) {
+  try {
+    if (!key) return null;
+    var raw = PropertiesService.getUserProperties().getProperty('CL_REPUTATION');
+    var map = raw ? JSON.parse(raw) : {};
+    var entry = map[key];
+    if (!entry) return null;
+    var ttlDays = (typeof REPUTATION_CONFIG !== 'undefined' && REPUTATION_CONFIG.ttlDays) ? REPUTATION_CONFIG.ttlDays : 30;
+    var ageDays = (new Date().getTime() - (entry.updatedAt || 0)) / (24*60*60*1000);
+    if (ageDays > ttlDays) return null;
+    return entry;
+  } catch (e) {
+    return null;
+  }
+}
+
+function putSenderReputation(key, entry) {
+  try {
+    if (typeof FEATURE_FLAGS !== 'undefined' && !FEATURE_FLAGS.enableReputation) return false;
+    if (!key || !entry) return false;
+    var minScore = (typeof REPUTATION_CONFIG !== 'undefined' && REPUTATION_CONFIG.minScoreToCache) ? REPUTATION_CONFIG.minScoreToCache : 15;
+    if (typeof entry.score === 'number' && entry.score < minScore) return false;
+    var props = PropertiesService.getUserProperties();
+    var raw = props.getProperty('CL_REPUTATION');
+    var map = raw ? JSON.parse(raw) : {};
+    var prev = map[key] || {};
+    var now = new Date().getTime();
+    map[key] = {
+      category: entry.category || prev.category,
+      score: typeof entry.score === 'number' ? entry.score : (prev.score || 0),
+      hits: (prev.hits || 0) + 1,
+      updatedAt: now
+    };
+    props.setProperty('CL_REPUTATION', JSON.stringify(map));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
  * ------------- 测试与验证 -------------
  */
 

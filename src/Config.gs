@@ -149,3 +149,31 @@ const SUBJECT_WEIGHTS = {
   'roundup': 4,
   'update summary': 4
 };
+
+/**
+ * 动作策略映射（Foundational）
+ * 说明：与分类名称（Classifier 返回的 category）对齐。
+ * 可被后续用户偏好覆盖（到期自动归档策略等）。
+ */
+const CATEGORY_POLICIES = {
+  // US1（降噪保守）
+  'Newsletter': { keepInbox: true,  markRead: false, addStar: false, autoArchiveRule: null },
+  'Marketing':  { keepInbox: true,  markRead: false, addStar: false, autoArchiveRule: null },
+  'Product Updates': { keepInbox: true, markRead: false, addStar: false, autoArchiveRule: null },
+
+  // US2（高优先场景占位，后续故事接入）
+  'Finance/Security': { keepInbox: true,  markRead: false, addStar: false, autoArchiveRule: { days: 1 } },
+  'Purchases/Orders': { keepInbox: true,  markRead: false, addStar: false, autoArchiveRule: { days: 30 } },
+  'Purchases/Shipping': { keepInbox: true, markRead: false, addStar: false, autoArchiveRule: { days: 7 } },
+  'Finance/Bills': { keepInbox: true,    markRead: false, addStar: false, autoArchiveRule: { days: 60 } }
+};
+
+/**
+ * 到期自动归档时长（默认值），按场景定义
+ */
+const AUTO_ARCHIVE_DURATIONS = {
+  security: 1,    // 天
+  orders: 30,
+  shipping: 7,
+  bills: 60
+};

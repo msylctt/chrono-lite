@@ -723,157 +723,22 @@ function getTriggerStatusAdmin() {
 /**
  * 发送测试邮件（模拟 Newsletter）
  */
-function sendDebugTestEmail() {
-  var op = Log.operation(Log.Module.DEBUG_MODE, 'sendDebugTestEmail');
-
-  try {
-    var userEmail = Session.getActiveUser().getEmail();
-
-    if (!userEmail) {
-      op.fail(new Error('Unable to get user email'), {});
-      return;
-    }
-
-    // 获取当前时间
-    var now = new Date();
-    var timestamp = Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
-
-    // 构造更易命中启发式规则的测试邮件配置
-    // - 主题包含 Newsletter 关键词或 Marketing 关键词
-    // - 显示名包含常见平台域名（substack/beehiiv/convertkit/mailchimp/sendgrid）
-    var testEmails = [
-      // Newsletter via subject keyword + platform domain in display name
-      {
-        from: 'newsletter@stratechery.com',
-        displayName: 'newsletter@substack.com', // 触发 platform_domain: substack.com
-        subject: '[Test] Weekly Digest Newsletter - ' + timestamp, // 触发 "newsletter" / "weekly digest"
-        body: 'Chrono Lite Debug Mode Test\n\nThis should match Newsletter via subject keywords and platform domain.\nTimestamp: ' + timestamp,
-        replyTo: 'newsletter@stratechery.com'
-      },
-      // Newsletter via platform domain (beehiiv) + subject keyword
-      {
-        from: 'daily@morningbrew.com',
-        displayName: 'newsletter@beehiiv.com', // 触发 platform_domain: beehiiv.com
-        subject: '[Test] Daily Brief Newsletter - ' + timestamp, // 触发 "daily brief"
-        body: 'Chrono Lite Debug Mode Test (beehiiv)\nTimestamp: ' + timestamp,
-        replyTo: 'news@morningbrew.com'
-      },
-      // Marketing via subject keyword
-      {
-        from: 'offers@shop.com',
-        displayName: 'mailer@mailchimp.com', // 触发 platform_domain: mailchimp.com
-        subject: '[Test] Limited-time sale! Exclusive discount offer - ' + timestamp, // 触发 "sale/discount/offer"
-        body: 'Marketing promo test. Should classify as Marketing via heuristics.\nTimestamp: ' + timestamp,
-        replyTo: 'offers@shop.com'
-      },
-      // Update summary (should fall into Newsletter via keyword list)
-      {
-        from: 'updates@product.com',
-        displayName: 'noreply@sendgrid.net', // 触发 platform_domain: sendgrid.net
-        subject: '[Test] Monthly update summary - ' + timestamp, // 触发 "update summary"
-        body: 'Product update summary test.\nTimestamp: ' + timestamp,
-        replyTo: 'updates@product.com'
-      }
-    ];
-
-    // 随机选择一个测试邮件
-    var testEmail = testEmails[Math.floor(Math.random() * testEmails.length)];
-
-    // 发送邮件给自己
-    GmailApp.sendEmail(
-      userEmail,
-      testEmail.subject,
-      testEmail.body,
-      {
-        from: userEmail,
-        name: testEmail.displayName, // 显示名包含平台域名，命中 platform_domain 启发式
-        replyTo: testEmail.replyTo
-      }
-    );
-
-    // 记录发送时间
-    var userProps = PropertiesService.getUserProperties();
-    userProps.setProperty('chrono_debug_last_email', now.toISOString());
-
-    op.success({
-      recipient: userEmail,
-      mock_sender: testEmail.from,
-      subject: testEmail.subject
-    });
-
-  } catch (error) {
-    op.fail(error, {});
-  }
-}
+// sendDebugTestEmail 已移除（不再构造与发送测试数据）
 
 /**
  * 创建 Debug 模式触发器（每小时发送测试邮件）
  */
-function createDebugEmailTrigger() {
-  var op = Log.operation(Log.Module.DEBUG_MODE, 'createDebugEmailTrigger');
-
-  try {
-    // 删除现有的 Debug 触发器
-    deleteDebugEmailTrigger();
-
-    // 创建每小时触发器
-    ScriptApp.newTrigger('sendDebugTestEmail')
-      .timeBased()
-      .everyHours(1)
-      .create();
-
-    // 记录启用时间
-    var userProps = PropertiesService.getUserProperties();
-    userProps.setProperty('chrono_debug_mode', 'true');
-    userProps.setProperty('chrono_debug_enabled_at', new Date().toISOString());
-
-    op.success({interval: '1hour'});
-
-  } catch (error) {
-    op.fail(error, {});
-  }
-}
+// createDebugEmailTrigger 已移除（不再构造与发送测试数据）
 
 /**
  * 删除 Debug 模式触发器
  */
-function deleteDebugEmailTrigger() {
-  var triggers = ScriptApp.getProjectTriggers();
-  var deleted = 0;
-
-  for (var i = 0; i < triggers.length; i++) {
-    if (triggers[i].getHandlerFunction() === 'sendDebugTestEmail') {
-      var triggerId = triggers[i].getUniqueId();
-      ScriptApp.deleteTrigger(triggers[i]);
-      deleted++;
-      Log.debug(Log.Module.DEBUG_MODE, 'Deleted debug trigger', {trigger_id: triggerId});
-    }
-  }
-
-  // 清除 Debug 模式标记
-  var userProps = PropertiesService.getUserProperties();
-  userProps.deleteProperty('chrono_debug_mode');
-
-  if (deleted > 0) {
-    Log.info(Log.Module.DEBUG_MODE, 'Debug mode disabled', {triggers_deleted: deleted});
-  }
-}
+// deleteDebugEmailTrigger 已移除（由 clearClassifierTestData 内联处理）
 
 /**
  * 获取 Debug 模式状态
  */
-function getDebugModeStatus() {
-  var userProps = PropertiesService.getUserProperties();
-  var debugMode = userProps.getProperty('chrono_debug_mode') === 'true';
-  var enabledAt = userProps.getProperty('chrono_debug_enabled_at');
-  var lastEmail = userProps.getProperty('chrono_debug_last_email');
-
-  return {
-    enabled: debugMode,
-    enabledAt: enabledAt,
-    lastEmail: lastEmail
-  };
-}
+// getDebugModeStatus 已移除（不再维护 Debug 模式状态）
 
 /**
  * 清空测试邮件数据（将匹配到的测试线程移入回收站，并清理调试属性与触发器）
@@ -913,8 +778,20 @@ function clearClassifierTestData(days) {
       props.deleteProperty('chrono_debug_enabled_at');
     } catch (eProps) { /* ignore */ }
 
-    // 关闭 Debug 邮件触发器（如存在）
-    try { deleteDebugEmailTrigger(); } catch (eTrig) { /* ignore */ }
+    // 关闭历史残留 Debug 触发器（兼容老版本 sendDebugTestEmail 名称）
+    try {
+      var triggers = ScriptApp.getProjectTriggers();
+      var deleted = 0;
+      for (var t = 0; t < triggers.length; t++) {
+        if (triggers[t].getHandlerFunction && triggers[t].getHandlerFunction() === 'sendDebugTestEmail') {
+          ScriptApp.deleteTrigger(triggers[t]);
+          deleted++;
+        }
+      }
+      if (deleted > 0) {
+        Log.info(Log.Module.DEBUG_MODE, 'Deleted legacy debug triggers', { count: deleted });
+      }
+    } catch (eTrig) { /* ignore */ }
 
     op.success({ query: query, found: threads.length, removed: removed });
 

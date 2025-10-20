@@ -151,7 +151,9 @@ function buildDashboardCard() {
 
     .addWidget(CardService.newKeyValue()
       .setTopLabel('Status')
-      .setContent(triggerStatus.enabled ? '✅ Enabled' : '⏸️ Disabled')
+      .setContent((PropertiesService.getUserProperties().getProperty('chrono_manual_running') === 'true')
+        ? '⚡ Running (manual)'
+        : (triggerStatus.enabled ? '✅ Enabled' : '⏸️ Disabled'))
       .setIcon(triggerStatus.enabled ? CardService.Icon.CLOCK : CardService.Icon.NONE))
 
     .addWidget(statusWidget));
@@ -792,8 +794,23 @@ function manualSync(e) {
             method: result.method
           });
         } else {
-          unclassified++;
-          Logger.log((index + 1) + '. ' + senderEmail + ' → Unclassified');
+          // Fallback: mark as Uncategorized per product policy
+          applyCategory(thread, 'Uncategorized');
+          processed++;
+          categoryStats['Uncategorized'] = (categoryStats['Uncategorized'] || 0) + 1;
+
+          // Record processed emails as fallback
+          if (subject.length > 30) {
+            subject = subject.substring(0, 30) + '...';
+          }
+          processedEmails.push({
+            category: 'Uncategorized',
+            subject: subject,
+            from: senderEmail,
+            method: 'fallback'
+          });
+
+          Logger.log((index + 1) + '. ' + senderEmail + ' → Uncategorized (fallback)');
         }
       } catch (error) {
         Logger.log('⚠️ Failed to process email: ' + error.message);
@@ -919,16 +936,35 @@ function triggerAutoProcess(e) {
   try {
     Logger.log('🤖 Manually triggering auto process...');
 
+    // Prevent concurrent runs
+    var lock = LockService.getScriptLock();
+    if (!lock.tryLock(1000)) {
+      return CardService.newActionResponseBuilder()
+        .setNotification(CardService.newNotification()
+          .setText('⏳ Auto scan is already running'))
+        .setNavigation(CardService.newNavigation()
+          .updateCard(buildDashboardCard()[0]))
+        .build();
+    }
+
+    var userProps = PropertiesService.getUserProperties();
+    try {
+      userProps.setProperty('chrono_manual_running', 'true');
+      userProps.setProperty('chrono_last_manual_trigger', new Date().toISOString());
+    } catch (eProp) { /* ignore */ }
+
     // Directly call auto process function
     autoProcessInbox();
 
     // Get processing results
-    var userProps = PropertiesService.getUserProperties();
     var lastProcessed = userProps.getProperty('chrono_last_processed') || '0';
+
+    try { userProps.setProperty('chrono_manual_running', 'false'); } catch (eProp2) { /* ignore */ }
+    try { lock.releaseLock(); } catch (eRel) { /* ignore */ }
 
     return CardService.newActionResponseBuilder()
       .setNotification(CardService.newNotification()
-        .setText('✅ Auto scan complete! Processed ' + lastProcessed + ' emails'))
+        .setText('✅ Manual auto scan complete: ' + lastProcessed + ' emails'))
       .setNavigation(CardService.newNavigation()
         .updateCard(buildDashboardCard()[0]))
       .build();
@@ -1128,7 +1164,7 @@ function openSettings(e) {
  * View Category List
  */
 function viewCategories(e) {
-  var categories = Object.keys(CATEGORIES);
+  var categories = Object.keys(getUnifiedCategories());
   var meta = getCacheMeta();
 
   var card = CardService.newCardBuilder()
@@ -1144,7 +1180,8 @@ function viewCategories(e) {
 
   // Display each category
   categories.forEach(function(categoryName) {
-    var config = CATEGORIES[categoryName];
+    var unified = getUnifiedCategories();
+    var config = unified[categoryName] || { label: 'Chrono/' + categoryName, action: 'keep_inbox', markRead: false };
     var actionText = config.action === 'archive' ? '📦 Archive' : '📥 Keep';
     var readText = config.markRead ? '✓ Read' : '○ Unread';
 

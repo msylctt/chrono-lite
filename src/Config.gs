@@ -68,6 +68,23 @@ const PROCESSED_LABEL = 'Chrono/Processed';
 const LOG_LEVEL = 'INFO';
 
 /**
+ * 动作策略映射（与分类器输出保持一致）
+ */
+const CATEGORY_POLICIES = {
+  'Newsletter': { keepInbox: true,  markRead: false, addStar: false },
+  'Marketing':  { keepInbox: true,  markRead: false, addStar: false },
+  'Product Updates': { keepInbox: true, markRead: false, addStar: false },
+  'Finance/Security': { keepInbox: true, markRead: false, addStar: false },
+  'Purchases/Orders': { keepInbox: true, markRead: false, addStar: false },
+  'Purchases/Shipping': { keepInbox: true, markRead: false, addStar: false },
+  'Finance/Bills': { keepInbox: true, markRead: false, addStar: false },
+  'Travel/Flights': { keepInbox: true, markRead: false, addStar: false },
+  'Travel/Hotels': { keepInbox: true, markRead: false, addStar: false },
+  'System/Auto-Replies': { keepInbox: true, markRead: false, addStar: false },
+  'Uncategorized': { keepInbox: true, markRead: false, addStar: false }
+};
+
+/**
  * 分类器特性开关（渐进式发布）
  */
 const FEATURE_FLAGS = {
@@ -149,3 +166,39 @@ const SUBJECT_WEIGHTS = {
   'roundup': 4,
   'update summary': 4
 };
+
+/**
+ * 统一分类定义（单一真相源）
+ * - 以 CATEGORY_POLICIES 的键为主（与分类器输出一致）
+ * - 合并 CATEGORIES 中的显示/动作配置
+ * - 缺省时提供合理默认：label = 'Chrono/' + category，action=keep_inbox，markRead=false
+ */
+function getUnifiedCategories() {
+  var unified = {};
+  try {
+    if (typeof CATEGORY_POLICIES !== 'undefined' && CATEGORY_POLICIES) {
+      for (var cat in CATEGORY_POLICIES) {
+        if (!CATEGORY_POLICIES.hasOwnProperty(cat)) continue;
+        var cfg = (typeof CATEGORIES !== 'undefined' && CATEGORIES && CATEGORIES[cat]) ? CATEGORIES[cat] : null;
+        if (!cfg) {
+          cfg = {
+            label: 'Chrono/' + cat,
+            action: 'keep_inbox',
+            markRead: false,
+            addStar: false
+          };
+        }
+        unified[cat] = cfg;
+      }
+    }
+    if (typeof CATEGORIES !== 'undefined' && CATEGORIES) {
+      for (var cat2 in CATEGORIES) {
+        if (!CATEGORIES.hasOwnProperty(cat2)) continue;
+        if (!unified[cat2]) {
+          unified[cat2] = CATEGORIES[cat2];
+        }
+      }
+    }
+  } catch (e) { /* ignore */ }
+  return unified;
+}

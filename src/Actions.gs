@@ -55,10 +55,20 @@ function applyCategory(thread, categoryName) {
       thread.markRead();
     }
 
-    // 4. 标记已处理，避免重复扫描
+    // 4. 清理系统性标记
+    //    - 兼容旧版本：移除 Chrono/Processed
+    //    - 移除未分类跳过标记 Chrono/System/Seen
     try {
-      var processed = getOrCreateLabel(PROCESSED_LABEL);
-      if (processed) thread.addLabel(processed);
+      var processedLabel = GmailApp.getUserLabelByName(PROCESSED_LABEL);
+      if (processedLabel) {
+        try { thread.removeLabel(processedLabel); } catch (eProc) { /* ignore */ }
+      }
+      if (typeof SEEN_LABEL !== 'undefined') {
+        var seenLabel = GmailApp.getUserLabelByName(SEEN_LABEL);
+        if (seenLabel) {
+          try { thread.removeLabel(seenLabel); } catch (eSeen) { /* ignore */ }
+        }
+      }
     } catch (e2) { /* ignore */ }
 
     Log.debug(Log.Module.ACTION, 'Category applied', {

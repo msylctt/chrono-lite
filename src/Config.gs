@@ -168,6 +168,30 @@ const SUBJECT_WEIGHTS = {
 };
 
 /**
+ * 用户覆盖：分类动作（PropertiesService 存储）
+ */
+function getCategoryOverrides() {
+  try {
+    var raw = PropertiesService.getUserProperties().getProperty('CATEGORY_OVERRIDES');
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function setCategoryOverrides(overrides) {
+  try {
+    PropertiesService.getUserProperties().setProperty('CATEGORY_OVERRIDES', JSON.stringify(overrides || {}));
+  } catch (e) { /* ignore */ }
+}
+
+function clearCategoryOverrides() {
+  try {
+    PropertiesService.getUserProperties().deleteProperty('CATEGORY_OVERRIDES');
+  } catch (e) { /* ignore */ }
+}
+
+/**
  * 统一分类定义（单一真相源）
  * - 以 CATEGORY_POLICIES 的键为主（与分类器输出一致）
  * - 合并 CATEGORIES 中的显示/动作配置
@@ -201,4 +225,20 @@ function getUnifiedCategories() {
     }
   } catch (e) { /* ignore */ }
   return unified;
+}
+
+/**
+ * 获取最终生效的分类配置（合并用户覆盖）
+ */
+function getEffectiveCategoryConfig(category) {
+  var unified = getUnifiedCategories();
+  var base = unified[category] || { label: 'Chrono/' + category, action: 'keep_inbox', markRead: false };
+  var overrides = getCategoryOverrides();
+  var ov = overrides[category] || {};
+  return {
+    label: base.label,
+    action: (typeof ov.action !== 'undefined') ? ov.action : base.action,
+    markRead: (typeof ov.markRead !== 'undefined') ? ov.markRead : base.markRead,
+    addStar: (typeof ov.addStar !== 'undefined') ? ov.addStar : (base.addStar || false)
+  };
 }

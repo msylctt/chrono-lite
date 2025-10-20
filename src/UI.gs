@@ -205,10 +205,7 @@ function buildDashboardCard() {
         .setOnClickAction(CardService.newAction()
           .setFunctionName('forceUpdateDatabase')))
 
-      .addWidget(CardService.newTextButton()
-        .setText('🧹 Clear Test Labels')
-        .setOnClickAction(CardService.newAction()
-          .setFunctionName('clearTestLabelsFromUI'))))
+      )
 
     // Settings and Help
     .addSection(CardService.newCardSection()
@@ -1180,22 +1177,47 @@ function viewCategories(e) {
 
   // Display each category
   categories.forEach(function(categoryName) {
-    var unified = getUnifiedCategories();
-    var config = unified[categoryName] || { label: 'Chrono/' + categoryName, action: 'keep_inbox', markRead: false };
+    var config = (typeof getEffectiveCategoryConfig === 'function')
+      ? getEffectiveCategoryConfig(categoryName)
+      : (getUnifiedCategories()[categoryName] || { label: 'Chrono/' + categoryName, action: 'keep_inbox', markRead: false });
     var actionText = config.action === 'archive' ? '📦 Archive' : '📥 Keep';
     var readText = config.markRead ? '✓ Read' : '○ Unread';
 
-    card.addSection(CardService.newCardSection()
+    var section = CardService.newCardSection()
       .addWidget(CardService.newKeyValue()
         .setTopLabel(categoryName)
         .setContent(config.label)
         .setBottomLabel(actionText + ' | ' + readText)
-        .setIcon(CardService.Icon.BOOKMARK)));
+        .setIcon(CardService.Icon.BOOKMARK));
+
+    // Editable controls: action + markRead
+    section.addWidget(CardService.newSelectionInput()
+      .setType(CardService.SelectionInputType.DROPDOWN)
+      .setTitle('Action')
+      .setFieldName('cat_action_' + categoryName)
+      .addItem('Keep in inbox', 'keep_inbox', config.action !== 'archive')
+      .addItem('Archive', 'archive', config.action === 'archive'));
+
+    section.addWidget(CardService.newSelectionInput()
+      .setType(CardService.SelectionInputType.CHECK_BOX)
+      .setTitle('Mark as read')
+      .setFieldName('cat_markread_' + categoryName)
+      .addItem('Enable', 'true', !!config.markRead));
+
+    section.addWidget(CardService.newSelectionInput()
+      .setType(CardService.SelectionInputType.CHECK_BOX)
+      .setTitle('Star it')
+      .setFieldName('cat_addstar_' + categoryName)
+      .addItem('Enable', 'true', !!config.addStar));
+
+    card.addSection(section);
   });
 
   card.addSection(CardService.newCardSection()
-    .addWidget(CardService.newTextParagraph()
-      .setText('<font color="#666666">💡 Modify Config.gs to customize category rules</font>'))
+    .addWidget(CardService.newTextButton()
+      .setText('💾 Save Category Actions')
+      .setOnClickAction(CardService.newAction()
+        .setFunctionName('saveCategoryActions')))
 
     .addWidget(CardService.newTextButton()
       .setText('← Back to Settings')
@@ -1208,6 +1230,57 @@ function viewCategories(e) {
     .setNavigation(CardService.newNavigation()
       .pushCard(card))
     .build();
+}
+
+/**
+ * Save Category Actions (per-category overrides)
+ */
+function saveCategoryActions(e) {
+  try {
+    var formInput = e.formInput || {};
+    var cats = Object.keys(getUnifiedCategories());
+    var overrides = getCategoryOverrides();
+
+    for (var i = 0; i < cats.length; i++) {
+      var c = cats[i];
+      var actionKey = 'cat_action_' + c;
+      var markKey = 'cat_markread_' + c;
+      var starKey = 'cat_addstar_' + c;
+      var actionVal = formInput[actionKey];
+      var markVal = formInput[markKey];
+      var starVal = formInput[starKey];
+      if (!overrides[c]) overrides[c] = {};
+      if (actionVal === 'archive' || actionVal === 'keep_inbox') {
+        overrides[c].action = actionVal;
+      }
+      if (typeof markVal !== 'undefined') {
+        if (Array.isArray(markVal)) {
+          overrides[c].markRead = markVal.indexOf('true') !== -1;
+        } else {
+          overrides[c].markRead = (markVal === 'true');
+        }
+      }
+      if (typeof starVal !== 'undefined') {
+        if (Array.isArray(starVal)) {
+          overrides[c].addStar = starVal.indexOf('true') !== -1;
+        } else {
+          overrides[c].addStar = (starVal === 'true');
+        }
+      }
+    }
+
+    setCategoryOverrides(overrides);
+
+    return CardService.newActionResponseBuilder()
+      .setNotification(CardService.newNotification().setText('✅ Category actions saved'))
+      .setNavigation(CardService.newNavigation()
+        .updateCard(viewCategories().printJson ? buildDashboardCard()[0] : viewCategories().printJson))
+      .build();
+  } catch (error) {
+    return CardService.newActionResponseBuilder()
+      .setNotification(CardService.newNotification().setText('❌ Save failed: ' + error.message))
+      .build();
+  }
 }
 
 /**
@@ -1296,6 +1369,19 @@ function confirmResetAll(e) {
                 '<b>Emails themselves will not be deleted</b>, but will be restored to unclassified state')))
 
     .addSection(CardService.newCardSection()
+      .setHeader('Options')
+      .addWidget(CardService.newSelectionInput()
+        .setType(CardService.SelectionInputType.CHECK_BOX)
+        .setTitle('Also reset category actions (Archive/Keep, Mark as read)')
+        .setFieldName('reset_actions')
+        .addItem('Reset overrides to defaults', 'true', true))
+      .addWidget(CardService.newSelectionInput()
+        .setType(CardService.SelectionInputType.CHECK_BOX)
+        .setTitle('Also clear System/Seen markers')
+        .setFieldName('reset_seen')
+        .addItem('Clear Seen cache', 'true', true)))
+
+    .addSection(CardService.newCardSection()
       .addWidget(CardService.newTextParagraph()
         .setText('<font color="#666666">This operation is expected to take 1-2 minutes</font>'))
 
@@ -1327,6 +1413,10 @@ function executeResetAll(e) {
   try {
     Logger.log('🔄 Starting complete reset...');
 
+    var formInput = e && e.formInput ? e.formInput : {};
+    var resetActions = formInput.reset_actions;
+    var resetSeen = formInput.reset_seen;
+
     // 1. Delete all Chrono labels
     Logger.log('Deleting labels...');
     clearTestLabels();
@@ -1341,6 +1431,37 @@ function executeResetAll(e) {
     userProps.deleteProperty('chrono_initialized');
     userProps.deleteProperty('chrono_process_days');
     userProps.deleteProperty('chrono_process_limit');
+
+    // 4. Optional: reset category action overrides
+    try {
+      var doResetActions = false;
+      if (typeof resetActions !== 'undefined') {
+        if (Array.isArray(resetActions)) doResetActions = resetActions.indexOf('true') !== -1; else doResetActions = (resetActions === 'true');
+      }
+      if (doResetActions && typeof clearCategoryOverrides === 'function') {
+        clearCategoryOverrides();
+      }
+    } catch (eRA) { /* ignore */ }
+
+    // 5. Optional: clear System/Seen markers
+    try {
+      var doResetSeen = false;
+      if (typeof resetSeen !== 'undefined') {
+        if (Array.isArray(resetSeen)) doResetSeen = resetSeen.indexOf('true') !== -1; else doResetSeen = (resetSeen === 'true');
+      }
+      if (doResetSeen) {
+        var props = PropertiesService.getUserProperties();
+        var all = props.getProperties();
+        var seenLabel = GmailApp.getUserLabelByName(SEEN_LABEL);
+        for (var k in all) {
+          if (all.hasOwnProperty(k) && k.indexOf('seen:') === 0) {
+            var threadId = k.substring(5);
+            try { var th = GmailApp.getThreadById(threadId); if (th && seenLabel) th.removeLabel(seenLabel); } catch (eRm) { /* ignore */ }
+            try { props.deleteProperty(k); } catch (eDel) { /* ignore */ }
+          }
+        }
+      }
+    } catch (eRS) { /* ignore */ }
 
     Logger.log('✅ Reset complete!');
 

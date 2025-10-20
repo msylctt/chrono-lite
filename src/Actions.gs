@@ -28,7 +28,9 @@ function getOrCreateLabel(labelName) {
  * 应用分类动作（单个线程）
  */
 function applyCategory(thread, categoryName) {
-  var config = CATEGORIES[categoryName];
+  var config = (typeof getEffectiveCategoryConfig === 'function')
+    ? getEffectiveCategoryConfig(categoryName)
+    : CATEGORIES[categoryName];
 
   if (!config) {
     Log.warn(Log.Module.ACTION, 'Unknown category', {category: categoryName});
@@ -50,10 +52,20 @@ function applyCategory(thread, categoryName) {
       thread.moveToArchive();
     }
 
-    // 3. 标记已读
+    // 3. 标记已读 / 星标
     if (config.markRead) {
       thread.markRead();
     }
+    try {
+      if (config.addStar) {
+        // GmailThread 没有 addStar API，在 Apps Script 中需使用 GmailApp.starMessage 级别能力，不可直接对线程星标
+        // 兼容实现：给首封消息加星
+        var messages = thread.getMessages();
+        if (messages && messages.length > 0) {
+          messages[0].star();
+        }
+      }
+    } catch (eStar) { /* ignore */ }
 
     // 4. 清理系统性标记
     //    - 兼容旧版本：移除 Chrono/Processed

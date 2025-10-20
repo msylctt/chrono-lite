@@ -229,6 +229,8 @@ function getUnifiedCategories() {
 
 /**
  * 获取最终生效的分类配置（合并用户覆盖）
+ * @param {string} category - 分类名称
+ * @returns {{label:string, action:string, markRead:boolean, addStar:boolean}}
  */
 function getEffectiveCategoryConfig(category) {
   var unified = getUnifiedCategories();

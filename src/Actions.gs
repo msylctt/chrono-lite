@@ -26,6 +26,9 @@ function getOrCreateLabel(labelName) {
 
 /**
  * 应用分类动作（单个线程）
+ * @param {GmailThread} thread - Gmail 线程
+ * @param {string} categoryName - 分类名称
+ * @returns {boolean} 是否应用成功
  */
 function applyCategory(thread, categoryName) {
   var config = (typeof getEffectiveCategoryConfig === 'function')
@@ -104,6 +107,8 @@ function applyCategory(thread, categoryName) {
 
 /**
  * 批量应用分类
+ * @param {Array<{thread:GmailThread, category:string}>} threadsWithCategories - 线程与分类映射
+ * @returns {{success:number, failed:number, byCategory:Object}}
  */
 function applyBatchCategories(threadsWithCategories) {
   var labelCache = {};
@@ -116,7 +121,9 @@ function applyBatchCategories(threadsWithCategories) {
   threadsWithCategories.forEach(function(item) {
     var thread = item.thread;
     var category = item.category;
-    var config = CATEGORIES[category];
+    var config = (typeof getEffectiveCategoryConfig === 'function')
+      ? getEffectiveCategoryConfig(category)
+      : (CATEGORIES[category] || null);
 
     if (!config) return;
 

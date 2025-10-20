@@ -9,6 +9,7 @@
 
 /**
  * 自动处理收件箱（定时触发器调用）
+ * @returns {void}
  */
 function autoProcessInbox() {
   var op = Log.operation(Log.Module.TRIGGER, 'autoProcessInbox');
@@ -79,6 +80,7 @@ function autoProcessInbox() {
 
 /**
  * 初始化设置（首次运行）
+ * @returns {void}
  */
 function initialSetup() {
   var op = Log.operation(Log.Module.INIT, 'initialSetup');
@@ -160,8 +162,8 @@ function initialSetup() {
 
 /**
  * 授权辅助函数（在 Apps Script 编辑器中运行）
- *
  * 运行此函数会触发授权对话框，授予触发器管理权限
+ * @returns {string}
  */
 function authorizeChronoLite() {
   Logger.log('🔑 开始授权流程...');
@@ -188,6 +190,7 @@ function authorizeChronoLite() {
 /**
  * 手动创建触发器（在 Apps Script 编辑器中运行）
  * 用于调试和修复触发器问题
+ * @returns {boolean}
  */
 function manuallyCreateTrigger() {
   Logger.log('🔧 手动创建触发器...');
@@ -242,6 +245,7 @@ function manuallyCreateTrigger() {
 /**
  * 诊断触发器问题（在 Apps Script 编辑器中运行）
  * 完整检查触发器状态、权限和配置
+ * @returns {void}
  */
 function diagnoseTriggerIssue() {
   Logger.log('='.repeat(60));
@@ -411,56 +415,12 @@ function diagnoseTriggerIssue() {
 /**
  * 测试数据库连接
  */
-function testDatabaseConnection() {
-  var op = Log.operation(Log.Module.DATABASE, 'testDatabaseConnection');
-
-  try {
-    var meta = loadSenderDatabase();
-
-    if (!meta) {
-      op.fail(new Error('Database connection failed'), {});
-      return;
-    }
-
-    Log.info(Log.Module.DATABASE, 'Database connection successful', {
-      version: meta.version || 'unknown',
-      shard_count: meta.shardCount,
-      total_entries: meta.totalEntries,
-      last_updated: meta.lastUpdated
-    });
-
-    // 测试查询
-    var testEmail = 'newsletter@stratechery.com';
-    var result = querySender(testEmail);
-
-    if (result) {
-      Log.info(Log.Module.DATABASE, 'Query test successful', {
-        email: testEmail,
-        category: result.category
-      });
-    } else {
-      Log.warn(Log.Module.DATABASE, 'Query test returned no result', {
-        email: testEmail
-      });
-    }
-
-    op.success({
-      db_entries: meta.totalEntries,
-      query_test: result ? 'success' : 'not_found'
-    });
-
-  } catch (error) {
-    op.fail(error, {});
-  }
-}
+// 已由 Database.gs 提供 testDatabaseConnection()
 
 /**
  * 提取邮件地址
  */
-function extractEmail(fromString) {
-  var match = fromString.match(/<(.+?)>/);
-  return match ? match[1] : fromString;
-}
+// 统一使用 Classifier.gs 中的 extractEmail()
 
 /**
  * ==========================================
@@ -471,6 +431,7 @@ function extractEmail(fromString) {
 /**
  * 确保触发器存在（自我修复机制）
  * 在 autoProcessInbox 中调用，防止触发器意外丢失
+ * @returns {void}
  */
 function ensureTriggerExists() {
   try {
@@ -502,7 +463,8 @@ function ensureTriggerExists() {
 
 /**
  * 创建定时触发器（支持自定义周期）
- * @param {string} interval - 触发间隔，可选值：'1hour', '2hour', '4hour', '6hour', '12hour', '24hour'
+ * @param {string} interval - 触发间隔，可选值：'1hour'|'2hour'|'4hour'|'6hour'|'12hour'|'24hour'
+ * @returns {void}
  */
 function createAutoProcessTrigger(interval) {
   var op = Log.operation(Log.Module.TRIGGER, 'createAutoProcessTrigger');
@@ -561,6 +523,7 @@ function createAutoProcessTrigger(interval) {
 
 /**
  * 删除自动处理触发器
+ * @returns {void}
  */
 function deleteAutoProcessTrigger() {
   var triggers = ScriptApp.getProjectTriggers();
@@ -582,6 +545,7 @@ function deleteAutoProcessTrigger() {
 
 /**
  * 获取触发器状态（基于 PropertiesService，不需要触发器权限）
+ * @returns {{enabled:boolean, createdAt?:string, lastRun?:string, lastProcessed?:string, nextRun?:string, interval:string, message:string, hint?:string}}
  */
 function getTriggerStatus() {
   var userProps = PropertiesService.getUserProperties();
@@ -628,6 +592,8 @@ function getTriggerStatus() {
 
 /**
  * 获取间隔毫秒数
+ * @param {string} interval
+ * @returns {number}
  */
 function getIntervalMilliseconds(interval) {
   switch (interval) {
@@ -650,6 +616,8 @@ function getIntervalMilliseconds(interval) {
 
 /**
  * 获取间隔友好标签
+ * @param {string} interval
+ * @returns {string}
  */
 function getIntervalLabel(interval) {
   switch (interval) {

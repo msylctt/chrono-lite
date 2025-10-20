@@ -14,6 +14,10 @@
  * ==========================================
  */
 
+// 内部 UI 构建小工具（轻量包装，避免重复）
+function uiParagraph(text) { return CardService.newTextParagraph().setText(text); }
+function uiKV(top, content, icon) { return CardService.newKeyValue().setTopLabel(top).setContent(content).setIcon(icon || CardService.Icon.NONE); }
+
 /**
  * Homepage Trigger (Sidebar Homepage)
  */
@@ -171,15 +175,9 @@ function buildDashboardCard() {
     .addSection(CardService.newCardSection()
       .setHeader('📈 Today\'s Statistics')
 
-      .addWidget(CardService.newKeyValue()
-        .setTopLabel('Processed')
-        .setContent(stats.todayProcessed + ' emails')
-        .setIcon(CardService.Icon.EMAIL))
+      .addWidget(uiKV('Processed', stats.todayProcessed + ' emails', CardService.Icon.EMAIL))
 
-      .addWidget(CardService.newKeyValue()
-        .setTopLabel('Newsletter Unread')
-        .setContent(stats.newsletterUnread + ' emails')
-        .setIcon(CardService.Icon.BOOKMARK)))
+      .addWidget(uiKV('Newsletter Unread', stats.newsletterUnread + ' emails', CardService.Icon.BOOKMARK)))
 
     // Quick Actions
     .addSection(CardService.newCardSection()
@@ -252,10 +250,7 @@ function buildInitializationResultCard(processed, total, categoryStats, executio
       var config = CATEGORIES[category];
       var actionText = config && config.action === 'archive' ? 'Archived' : 'Kept in inbox';
 
-      statsSection.addWidget(CardService.newKeyValue()
-        .setTopLabel(category)
-        .setContent(count + ' emails | ' + actionText)
-        .setIcon(CardService.Icon.BOOKMARK));
+      statsSection.addWidget(uiKV(category, count + ' emails | ' + actionText, CardService.Icon.BOOKMARK));
     });
   } else {
     statsSection.addWidget(CardService.newTextParagraph()
@@ -320,10 +315,7 @@ function buildSyncResultCard(processed, total, categoryStats, processedEmails, s
 
   // Add unclassified statistics
   if (unclassified > 0) {
-    statsSection.addWidget(CardService.newKeyValue()
-      .setTopLabel('Unclassified')
-      .setContent(unclassified + ' emails')
-      .setIcon(CardService.Icon.DESCRIPTION));
+    statsSection.addWidget(uiKV('Unclassified', unclassified + ' emails', CardService.Icon.DESCRIPTION));
   }
 
   card.addSection(statsSection);
@@ -574,21 +566,21 @@ function buildErrorCard(errorMessage) {
  */
 function runInitialization(e) {
   try {
-    Logger.log('🚀 Starting initialization...');
+    Log.info(Log.Module.UI, 'Starting initialization', {});
 
     // 0. Get user configuration
     var userProps = PropertiesService.getUserProperties();
     var processDays = userProps.getProperty('chrono_process_days') || '7';
     var processLimit = parseInt(userProps.getProperty('chrono_process_limit') || '20');
 
-    Logger.log('Configuration: days=' + processDays + ', limit=' + processLimit);
+    Log.debug(Log.Module.UI, 'Initialization config', {days: processDays, limit: processLimit});
 
     // Store execution log to UserProperties for progress card reading
     var executionLog = [];
 
     // 1. Load database
     executionLog.push('Step 1/3: Loading sender database...');
-    Logger.log('📥 Loading sender database...');
+    Log.info(Log.Module.UI, 'Loading sender database', {});
     var meta = storeShardedDatabase();
 
     if (!meta) {
@@ -599,13 +591,13 @@ function runInitialization(e) {
 
     // 2. Process emails (using user configuration)
     executionLog.push('Step 2/3: Classifying emails...');
-    Logger.log('📧 Processing emails...');
+    Log.info(Log.Module.UI, 'Processing emails', {});
     var query = 'in:inbox newer_than:' + processDays + 'd';
     var threads = GmailApp.search(query, 0, processLimit);
     var processed = 0;
     var categoryStats = {};
 
-    Logger.log('Query: ' + query + ', found ' + threads.length + ' emails');
+    Log.info(Log.Module.UI, 'Inbox query', {query: query, found: threads.length});
     executionLog.push('Found ' + threads.length + ' emails');
 
     threads.forEach(function(thread, index) {
@@ -627,7 +619,7 @@ function runInitialization(e) {
           }
         }
       } catch (error) {
-        Logger.log('⚠️ Failed to process email: ' + error.message);
+          Log.warn(Log.Module.UI, 'Failed to process email', {error: error.message});
       }
     });
 
@@ -651,7 +643,7 @@ function runInitialization(e) {
       executionLog.push('⚠️ Automation enable failed, please enable manually');
     }
 
-    Logger.log('✅ Initialization complete!');
+    Log.info(Log.Module.UI, 'Initialization complete', {});
     executionLog.push('✅ All done!');
 
     // Build result card
@@ -666,7 +658,7 @@ function runInitialization(e) {
       .build();
 
   } catch (error) {
-    Logger.log('❌ Initialization failed: ' + error.message);
+    Log.error(Log.Module.UI, 'Initialization failed', {error: error.message});
 
     return CardService.newActionResponseBuilder()
       .setNotification(CardService.newNotification()
@@ -742,7 +734,7 @@ function suggestCategory(e) {
  */
 function manualSync(e) {
   try {
-    Logger.log('🔄 Starting manual sync...');
+    Log.info(Log.Module.UI, 'Starting manual sync', {});
 
     // Get user configuration
     var userProps = PropertiesService.getUserProperties();
@@ -758,7 +750,7 @@ function manualSync(e) {
     var skippedLowConfidence = 0;
     var unclassified = 0;
 
-    Logger.log('Query: ' + query + ', found ' + threads.length + ' emails');
+    Log.info(Log.Module.UI, 'Inbox query', {query: query, found: threads.length});
 
     threads.forEach(function(thread, index) {
       try {
@@ -769,8 +761,7 @@ function manualSync(e) {
 
         // Detailed logging
         if (result) {
-          Logger.log((index + 1) + '. ' + senderEmail + ' → ' + result.category +
-                    ' (' + result.method + ')');
+          Log.debug(Log.Module.UI, 'Classified', {idx: index + 1, sender: senderEmail, category: result.category, method: result.method});
 
           // Process all classifiable emails
           applyCategory(thread, result.category);
@@ -807,17 +798,14 @@ function manualSync(e) {
             method: 'fallback'
           });
 
-          Logger.log((index + 1) + '. ' + senderEmail + ' → Uncategorized (fallback)');
+          Log.debug(Log.Module.UI, 'Fallback Uncategorized', {idx: index + 1, sender: senderEmail});
         }
       } catch (error) {
-        Logger.log('⚠️ Failed to process email: ' + error.message);
+        Log.warn(Log.Module.UI, 'Failed to process email', {error: error.message});
       }
     });
 
-    Logger.log('✅ Sync complete!');
-    Logger.log('  - Processed: ' + processed + '/' + threads.length);
-    Logger.log('  - Low confidence skipped: ' + skippedLowConfidence);
-    Logger.log('  - Unclassified: ' + unclassified);
+    Log.info(Log.Module.UI, 'Sync complete', {processed: processed, total: threads.length, skipped_low_conf: skippedLowConfidence, unclassified: unclassified});
 
     // Build result card
     var resultCard = buildSyncResultCard(processed, threads.length, categoryStats, processedEmails, skippedLowConfidence, unclassified);
@@ -830,7 +818,7 @@ function manualSync(e) {
       .build();
 
   } catch (error) {
-    Logger.log('❌ Sync failed: ' + error.message);
+    Log.error(Log.Module.UI, 'Sync failed', {error: error.message});
 
     return CardService.newActionResponseBuilder()
       .setNotification(CardService.newNotification()
@@ -844,7 +832,7 @@ function manualSync(e) {
  */
 function forceUpdateDatabase(e) {
   try {
-    Logger.log('📥 Force updating database...');
+    Log.info(Log.Module.UI, 'Force updating database', {});
 
     // Clear cache
     clearSenderCache();
@@ -856,7 +844,7 @@ function forceUpdateDatabase(e) {
       throw new Error('Database loading failed');
     }
 
-    Logger.log('✅ Database update complete!');
+    Log.info(Log.Module.UI, 'Database update complete', {});
 
     return CardService.newActionResponseBuilder()
       .setNotification(CardService.newNotification()
@@ -864,7 +852,7 @@ function forceUpdateDatabase(e) {
       .build();
 
   } catch (error) {
-    Logger.log('❌ Database update failed: ' + error.message);
+    Log.error(Log.Module.UI, 'Database update failed', {error: error.message});
 
     return CardService.newActionResponseBuilder()
       .setNotification(CardService.newNotification()

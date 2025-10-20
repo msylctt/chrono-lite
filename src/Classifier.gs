@@ -366,6 +366,8 @@ function classifyByHeuristics(message) {
 
 /**
  * 完整分类流程（三级匹配）
+ * @param {GmailMessage} message - Gmail 消息对象
+ * @returns {{category:string, source:string, method:string, score?:number, threshold?:number}|null}
  */
 function classifyEmail(message) {
   var senderEmail = extractEmail(message.getFrom());
@@ -452,6 +454,8 @@ function classifyEmail(message) {
 
 /**
  * 批量分类（优化版）
+ * @param {GmailMessage[]} messages - Gmail 消息数组
+ * @returns {Array<{message:GmailMessage, category?:string, source?:string, method?:string}>}
  */
 function classifyBatch(messages) {
   if (!messages || messages.length === 0) return [];
@@ -740,24 +744,18 @@ function applyBatchHeuristics(metadata) {
 
   // 平台域名不作为直接分类依据（ESP 域名覆盖泛交易/营销），改由头部/内容/上下文综合判定
 
-  // 规则 3: 主题关键词
-  var newsletterKeywords = [
-    'newsletter',
-    'weekly digest',
-    'daily brief',
-    'roundup',
-    'update summary'
-  ];
-
+  // 规则 3: 主题关键词（统一使用 Config.SUBJECT_WEIGHTS）
   var subjectLower = subject.toLowerCase();
-  for (var j = 0; j < newsletterKeywords.length; j++) {
-    if (subjectLower.includes(newsletterKeywords[j])) {
-      return {
-        category: 'Newsletter',
-        method: 'subject_keyword'
-      };
+  try {
+    for (var sk in SUBJECT_WEIGHTS) {
+      if (SUBJECT_WEIGHTS.hasOwnProperty(sk) && subjectLower.indexOf(sk) !== -1) {
+        return {
+          category: 'Newsletter',
+          method: 'subject_keyword'
+        };
+      }
     }
-  }
+  } catch (eSk) { /* ignore */ }
 
   // 规则 4: 营销邮件特征
   if (subject.match(/sale|discount|offer|deal|促销|优惠/i)) {

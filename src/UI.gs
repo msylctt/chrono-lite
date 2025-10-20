@@ -89,32 +89,34 @@ function buildOnboardingCard() {
                 '🔒 Runs entirely in your Gmail<br>' +
                 '📊 Supports 5000+ Newsletter recognition</font>')))
 
-    // Side effects warning
+    // Side effects warning (collapsible)
     .addSection(CardService.newCardSection()
-      .setHeader('⚠️ Operation Instructions')
+      .setHeader('⚠️ ' + t('op_instructions'))
+      .setCollapsible(true)
+      .setNumUncollapsibleWidgets(0)
 
       .addWidget(CardService.newTextParagraph()
-        .setText('<b>Initialization will perform the following operations:</b><br><br>' +
-                '• Download and cache sender database (5000+ entries)<br>' +
-                '• Auto-classify 20 emails from the last 7 days<br>' +
-                '• Add Chrono labels to identified emails<br>' +
-                '• Archive/mark as read based on configuration<br><br>' +
-                '<font color="#e67e22"><b>Note:</b> Some emails may be moved out of inbox</font>')))
+        .setText(t('op_instructions_body'))))
 
     .addSection(CardService.newCardSection()
       .addWidget(CardService.newTextButton()
-        .setText('🚀 Start Initialization')
+        .setText(t('start_init'))
         .setOnClickAction(CardService.newAction()
           .setFunctionName('runInitialization'))
         .setTextButtonStyle(CardService.TextButtonStyle.FILLED))
 
       .addWidget(CardService.newTextButton()
-        .setText('⚙️ Custom Settings')
+        .setText(t('start_preview'))
+        .setOnClickAction(CardService.newAction()
+          .setFunctionName('startInitializationPreview')))
+
+      .addWidget(CardService.newTextButton()
+        .setText(t('custom_settings'))
         .setOnClickAction(CardService.newAction()
           .setFunctionName('openSettings')))
 
       .addWidget(CardService.newTextButton()
-        .setText('📖 View User Guide')
+        .setText(t('view_user_guide'))
         .setOpenLink(CardService.newOpenLink()
           .setUrl('https://github.com/msylctt/chrono-lite#readme'))
         .setTextButtonStyle(CardService.TextButtonStyle.TEXT)))
@@ -140,18 +142,33 @@ function buildDashboardCard() {
 
   var card = CardService.newCardBuilder()
     .setHeader(CardService.newCardHeader()
-      .setTitle('📊 Chrono Lite')
-      .setSubtitle('Email Classification Statistics'));
+      .setTitle('📊 ' + t('dashboard_title'))
+      .setSubtitle(t('dashboard_subtitle')));
+
+
+  // Optional: What's New banner (frequency capped)
+  try {
+    if (typeof UI_FLAGS !== 'undefined' && UI_FLAGS.enableWhatsNew && shouldShowWhatsNew()) {
+      card = card.addSection(CardService.newCardSection()
+        .addWidget(CardService.newTextParagraph()
+          .setText('<b>What\'s New</b><br><font color="#666666">UI refreshed: faster actions, undo support, and smarter tips.</font>'))
+        .addWidget(CardService.newTextButton()
+          .setText('Dismiss')
+          .setOnClickAction(CardService.newAction()
+            .setFunctionName('dismissWhatsNew')))
+      );
+    }
+  } catch (eWN) { /* ignore */ }
 
   // Automation status area
   var statusWidget = buildTriggerStatusWidget(triggerStatus);
 
   card = card.addSection(CardService.newCardSection()
-    .setHeader('🤖 Automation Status')
+    .setHeader('🤖 ' + t('automation_status'))
 
     .addWidget(CardService.newKeyValue()
-      .setTopLabel('Status')
-      .setContent(triggerStatus.enabled ? '✅ Enabled' : '⏸️ Disabled')
+      .setTopLabel(t('status'))
+      .setContent(triggerStatus.enabled ? '✅ ' + t('enabled') : '⏸️ ' + t('disabled'))
       .setIcon(triggerStatus.enabled ? CardService.Icon.CLOCK : CardService.Icon.NONE))
 
     .addWidget(statusWidget));
@@ -167,58 +184,58 @@ function buildDashboardCard() {
   card = card
     // Statistics
     .addSection(CardService.newCardSection()
-      .setHeader('📈 Today\'s Statistics')
+      .setHeader('📈 ' + t('today_stats'))
 
       .addWidget(CardService.newKeyValue()
-        .setTopLabel('Processed')
+        .setTopLabel(t('processed'))
         .setContent(stats.todayProcessed + ' emails')
         .setIcon(CardService.Icon.EMAIL))
 
       .addWidget(CardService.newKeyValue()
-        .setTopLabel('Newsletter Unread')
+        .setTopLabel(t('newsletter_unread'))
         .setContent(stats.newsletterUnread + ' emails')
         .setIcon(CardService.Icon.BOOKMARK)))
 
     // Quick Actions
     .addSection(CardService.newCardSection()
-      .setHeader('⚡ Quick Actions')
+      .setHeader('⚡ ' + t('quick_actions'))
 
       .addWidget(CardService.newTextButton()
-        .setText('🔄 Manual Sync Inbox')
+        .setText('🔄 ' + t('manual_sync'))
         .setOnClickAction(CardService.newAction()
           .setFunctionName('manualSync')))
 
       .addWidget(CardService.newTextButton()
-        .setText('🤖 Trigger Auto Scan (Debug)')
+        .setText('🤖 ' + t('trigger_auto'))
         .setOnClickAction(CardService.newAction()
           .setFunctionName('triggerAutoProcess')))
 
       .addWidget(CardService.newTextButton()
-        .setText(debugStatus.enabled ? '🐛 Disable Debug Mode' : '🐛 Enable Debug Mode')
+        .setText(debugStatus.enabled ? t('disable_debug') : t('enable_debug'))
         .setOnClickAction(CardService.newAction()
           .setFunctionName(debugStatus.enabled ? 'disableDebugMode' : 'enableDebugMode')))
 
       .addWidget(CardService.newTextButton()
-        .setText('📥 Update Sender Database')
+        .setText('📥 ' + t('update_db'))
         .setOnClickAction(CardService.newAction()
           .setFunctionName('forceUpdateDatabase')))
 
       .addWidget(CardService.newTextButton()
-        .setText('🧹 Clear Test Labels')
+        .setText('🧹 ' + t('clear_test_labels'))
         .setOnClickAction(CardService.newAction()
           .setFunctionName('clearTestLabelsFromUI'))))
 
     // Settings and Help
     .addSection(CardService.newCardSection()
-      .setHeader('⚙️ Settings & Help')
+      .setHeader('⚙️ ' + t('settings_help'))
 
       .addWidget(CardService.newTextButton()
-        .setText('⚙️ Settings')
+        .setText('⚙️ ' + t('settings_btn'))
         .setOnClickAction(CardService.newAction()
           .setFunctionName('openSettings')))
 
       .addWidget(CardService.newTextButton()
-        .setText('❓ Help & Feedback')
+        .setText('❓ ' + t('help_feedback'))
         .setOpenLink(CardService.newOpenLink()
           .setUrl('https://github.com/msylctt/chrono-lite/issues'))
         .setTextButtonStyle(CardService.TextButtonStyle.TEXT)))
@@ -226,6 +243,69 @@ function buildDashboardCard() {
     .build();
 
   return [card];
+}
+
+/**
+ * Actions page (from navbar)
+ */
+function openActions(e) {
+  var debugStatus = getDebugModeStatus();
+
+  var card = CardService.newCardBuilder()
+    .setHeader(CardService.newCardHeader()
+      .setTitle('⚡ Actions')
+      .setSubtitle('Quick operations'))
+
+    
+
+    .addSection(CardService.newCardSection()
+      .addWidget(CardService.newTextButton()
+        .setText('🔄 ' + t('manual_sync'))
+        .setOnClickAction(CardService.newAction()
+          .setFunctionName('manualSync')))
+
+      .addWidget(CardService.newTextButton()
+        .setText('📥 ' + t('update_db'))
+        .setOnClickAction(CardService.newAction()
+          .setFunctionName('forceUpdateDatabase')))
+
+      .addWidget(CardService.newTextButton()
+        .setText('🧹 ' + t('clear_test_labels'))
+        .setOnClickAction(CardService.newAction()
+          .setFunctionName('clearTestLabelsFromUI')))
+
+      .addWidget(CardService.newTextButton()
+        .setText(debugStatus.enabled ? '🐛 Disable Debug Mode' : '🐛 Enable Debug Mode')
+        .setOnClickAction(CardService.newAction()
+          .setFunctionName(debugStatus.enabled ? 'disableDebugMode' : 'enableDebugMode'))))
+
+    .build();
+
+  return CardService.newActionResponseBuilder()
+    .setNavigation(CardService.newNavigation()
+      .pushCard(card))
+    .build();
+}
+
+/**
+ * Undo from Card (UI handler)
+ */
+function undoApplyFromCard(e) {
+  try {
+    var threadId = e.parameters.threadId;
+    var category = e.parameters.category;
+    var ok = undoApply(threadId, category);
+
+    return CardService.newActionResponseBuilder()
+      .setNotification(CardService.newNotification()
+        .setText(ok ? '↩️ Undone' : '❌ Undo failed'))
+      .build();
+  } catch (error) {
+    return CardService.newActionResponseBuilder()
+      .setNotification(CardService.newNotification()
+        .setText('❌ Undo failed: ' + error.message))
+      .build();
+  }
 }
 
 /**
@@ -240,12 +320,12 @@ function buildDashboardCard() {
 function buildInitializationResultCard(processed, total, categoryStats, executionLog) {
   var card = CardService.newCardBuilder()
     .setHeader(CardService.newCardHeader()
-      .setTitle('✅ Initialization Complete')
-      .setSubtitle('Processed ' + processed + '/' + total + ' emails'));
+      .setTitle('✅ ' + t('init_complete'))
+      .setSubtitle(t('init_processed_of').replace('{p}', processed).replace('{t}', total)));
 
   // Statistics
   var statsSection = CardService.newCardSection()
-    .setHeader('📊 Processing Results');
+    .setHeader('📊 ' + t('processing_results'));
 
   if (processed > 0) {
     Object.keys(categoryStats).forEach(function(category) {
@@ -260,7 +340,7 @@ function buildInitializationResultCard(processed, total, categoryStats, executio
     });
   } else {
     statsSection.addWidget(CardService.newTextParagraph()
-      .setText('<font color="#666666">No classifiable emails found</font>'));
+      .setText('<font color="#666666">' + t('none_found') + '</font>'));
   }
 
   card.addSection(statsSection);
@@ -286,9 +366,13 @@ function buildInitializationResultCard(processed, total, categoryStats, executio
   // Action buttons
   card.addSection(CardService.newCardSection()
     .addWidget(CardService.newTextButton()
-      .setText('← Back to Home')
+      .setText(t('back_home'))
       .setOnClickAction(CardService.newAction()
-        .setFunctionName('goToDashboard'))));
+        .setFunctionName('goToDashboard')))
+    .addWidget(CardService.newTextButton()
+      .setText(t('open_settings'))
+      .setOnClickAction(CardService.newAction()
+        .setFunctionName('openSettings'))));
 
   return card.build();
 }
@@ -299,12 +383,12 @@ function buildInitializationResultCard(processed, total, categoryStats, executio
 function buildSyncResultCard(processed, total, categoryStats, processedEmails, skippedLowConfidence, unclassified) {
   var card = CardService.newCardBuilder()
     .setHeader(CardService.newCardHeader()
-      .setTitle('✅ Sync Complete')
-      .setSubtitle('Processed ' + processed + '/' + total + ' emails'));
+      .setTitle('✅ ' + t('sync_complete'))
+      .setSubtitle(t('init_processed_of').replace('{p}', processed).replace('{t}', total)));
 
   // Statistics
   var statsSection = CardService.newCardSection()
-    .setHeader('📊 Processing Results');
+    .setHeader('📊 ' + t('processing_results'));
 
   if (processed > 0) {
     Object.keys(categoryStats).forEach(function(category) {
@@ -316,13 +400,13 @@ function buildSyncResultCard(processed, total, categoryStats, processedEmails, s
     });
   } else {
     statsSection.addWidget(CardService.newTextParagraph()
-      .setText('<font color="#666666">No classifiable emails found</font>'));
+      .setText('<font color="#666666">' + t('none_found') + '</font>'));
   }
 
   // Add unclassified statistics
   if (unclassified > 0) {
     statsSection.addWidget(CardService.newKeyValue()
-      .setTopLabel('Unclassified')
+      .setTopLabel(t('unclassified'))
       .setContent(unclassified + ' emails')
       .setIcon(CardService.Icon.DESCRIPTION));
   }
@@ -340,7 +424,7 @@ function buildSyncResultCard(processed, total, categoryStats, processedEmails, s
     }
 
     card.addSection(CardService.newCardSection()
-      .setHeader('📧 Processing Details')
+      .setHeader('📧 ' + t('processing_details'))
       .setCollapsible(true)
       .setNumUncollapsibleWidgets(0)
       .addWidget(CardService.newTextParagraph()
@@ -391,6 +475,16 @@ function buildMinimalClassifiedCard(message, result) {
       .addWidget(CardService.newTextParagraph()
         .setText('<font color="#666666">✨ Automation enabled, no manual action needed</font>')))
 
+    .addSection(CardService.newCardSection()
+      .addWidget(CardService.newTextButton()
+        .setText('↩️ Undo')
+        .setOnClickAction(CardService.newAction()
+          .setFunctionName('undoApplyFromCard')
+          .setParameters({
+            threadId: message.getThread().getId(),
+            category: result.category
+          }))))
+
     .build();
 
   return [card];
@@ -409,18 +503,18 @@ function buildClassifiedCard(message, result) {
 
   var card = CardService.newCardBuilder()
     .setHeader(CardService.newCardHeader()
-      .setTitle('🔍 Chrono Lite')
+      .setTitle('🔍 ' + t('dashboard_title'))
       .setSubtitle(senderEmail))
 
     // Classification information
     .addSection(CardService.newCardSection()
       .addWidget(CardService.newKeyValue()
-        .setTopLabel('Identified Category')
+        .setTopLabel(t('identified_category'))
         .setContent(result.category)
         .setIcon(CardService.Icon.BOOKMARK))
 
       .addWidget(CardService.newKeyValue()
-        .setTopLabel('Match Method')
+        .setTopLabel(t('match_method'))
         .setContent(getSourceLabel(result.source))))
 
     // Action buttons
@@ -429,7 +523,7 @@ function buildClassifiedCard(message, result) {
 
       .addWidget(CardService.newButtonSet()
         .addButton(CardService.newTextButton()
-          .setText('✅ Confirm & Apply')
+          .setText(t('confirm_apply'))
           .setOnClickAction(CardService.newAction()
             .setFunctionName('applyLabelFromCard')
             .setParameters({
@@ -438,7 +532,7 @@ function buildClassifiedCard(message, result) {
             })))
 
         .addButton(CardService.newTextButton()
-          .setText('❌ Incorrect')
+          .setText(t('incorrect'))
           .setTextButtonStyle(CardService.TextButtonStyle.TEXT)
           .setOnClickAction(CardService.newAction()
             .setFunctionName('rejectClassification')
@@ -447,10 +541,17 @@ function buildClassifiedCard(message, result) {
               suggestedCategory: result.category
             })))));
 
+  // Why section (collapsible)
+  try {
+    if (typeof UI_FLAGS !== 'undefined' && UI_FLAGS.enableWhySection && result && result.features && result.features.length > 0) {
+      card.addSection(buildWhySection(result));
+    }
+  } catch (eWhy) { /* ignore */ }
+
   // Long article conversion prompt (contextual)
-  if (isLongArticle) {
+  if (isLongArticle && shouldShowLongArticleCTA()) {
     card.addSection(CardService.newCardSection()
-      .setHeader('💡 Long Article Tip')
+      .setHeader(t('long_article_tip'))
 
       .addWidget(CardService.newTextParagraph()
         .setText('This article is about <b>' + wordCount + '</b> words, estimated reading time <b>' +
@@ -461,7 +562,7 @@ function buildClassifiedCard(message, result) {
                 'Understand key points in just 1 minute ✨</font>'))
 
       .addWidget(CardService.newTextButton()
-        .setText('🚀 Try Chrono SaaS Free')
+        .setText(t('try_saas'))
         .setOpenLink(CardService.newOpenLink()
           .setUrl('https://chrono.app?utm_source=lite&utm_medium=long_article&word_count=' + wordCount))));
   }
@@ -478,17 +579,16 @@ function buildUnknownSenderCard(message) {
 
   var card = CardService.newCardBuilder()
     .setHeader(CardService.newCardHeader()
-      .setTitle('❓ Unknown Sender')
+      .setTitle('❓ ' + t('unknown_sender'))
       .setSubtitle(senderEmail))
 
     .addSection(CardService.newCardSection()
       .addWidget(CardService.newTextParagraph()
-        .setText('This sender is not in the database<br><br>' +
-                '<font color="#666666">You can help improve Chrono Lite</font>')))
+        .setText(t('contrib_help'))))
 
     // Quick labeling
     .addSection(CardService.newCardSection()
-      .setHeader('What do you think this is:')
+      .setHeader(t('what_is_this'))
 
       .addWidget(CardService.newButtonSet()
         .addButton(CardService.newTextButton()
@@ -531,7 +631,7 @@ function buildUnknownSenderCard(message) {
     // Submit to database
     .addSection(CardService.newCardSection()
       .addWidget(CardService.newTextButton()
-        .setText('📤 Submit to Open Source Database')
+        .setText(t('submit_to_oss'))
         .setOpenLink(CardService.newOpenLink()
           .setUrl('https://github.com/msylctt/chrono-lite/issues/new?title=New+Sender:+' +
                   encodeURIComponent(senderEmail)))
@@ -548,14 +648,14 @@ function buildUnknownSenderCard(message) {
 function buildErrorCard(errorMessage) {
   var card = CardService.newCardBuilder()
     .setHeader(CardService.newCardHeader()
-      .setTitle('❌ Error Occurred'))
+      .setTitle(t('error_title')))
 
     .addSection(CardService.newCardSection()
       .addWidget(CardService.newTextParagraph()
-        .setText('<b>Error Message:</b><br>' + errorMessage))
+        .setText(t('error_message').replace('{msg}', errorMessage)))
 
       .addWidget(CardService.newTextButton()
-        .setText('🔄 Refresh')
+        .setText(t('refresh'))
         .setOnClickAction(CardService.newAction()
           .setFunctionName('refreshCard'))))
 
@@ -672,6 +772,23 @@ function runInitialization(e) {
     return CardService.newActionResponseBuilder()
       .setNotification(CardService.newNotification()
         .setText('❌ Initialization failed: ' + error.message))
+      .build();
+  }
+}
+
+/**
+ * Start initialization in preview mode (labels only)
+ */
+function startInitializationPreview(e) {
+  try {
+    var userProps = PropertiesService.getUserProperties();
+    userProps.setProperty('chrono_preview_mode', 'true');
+    // delegate to normal initialization
+    return runInitialization(e);
+  } catch (error) {
+    return CardService.newActionResponseBuilder()
+      .setNotification(CardService.newNotification()
+        .setText('❌ Preview init failed: ' + error.message))
       .build();
   }
 }
@@ -956,6 +1073,14 @@ function enableDebugMode(e) {
     // Immediately send a test email
     sendDebugTestEmail();
 
+    // Persist debug status
+    try {
+      var u = PropertiesService.getUserProperties();
+      u.setProperty('chrono_debug_enabled', 'true');
+      u.setProperty('chrono_debug_enabled_at', '' + Date.now());
+      u.setProperty('chrono_debug_last_email', '' + Date.now());
+    } catch (eProps1) { /* ignore */ }
+
     return CardService.newActionResponseBuilder()
       .setNotification(CardService.newNotification()
         .setText('✅ Debug mode enabled! First test email sent'))
@@ -982,6 +1107,12 @@ function disableDebugMode(e) {
 
     // Delete Debug trigger
     deleteDebugEmailTrigger();
+
+    // Persist debug status
+    try {
+      var u = PropertiesService.getUserProperties();
+      u.setProperty('chrono_debug_enabled', 'false');
+    } catch (eProps2) { /* ignore */ }
 
     return CardService.newActionResponseBuilder()
       .setNotification(CardService.newNotification()
@@ -1018,8 +1149,8 @@ function openSettings(e) {
 
   var card = CardService.newCardBuilder()
     .setHeader(CardService.newCardHeader()
-      .setTitle('⚙️ Settings')
-      .setSubtitle('Configure Chrono Lite'))
+      .setTitle('⚙️ ' + t('settings_btn'))
+      .setSubtitle('Configure ' + t('dashboard_title')))
 
     // Database information
     .addSection(CardService.newCardSection()
@@ -1094,6 +1225,21 @@ function openSettings(e) {
         .setOnClickAction(CardService.newAction()
           .setFunctionName('saveProcessingConfig'))))
 
+    // Preferences
+    .addSection(CardService.newCardSection()
+      .setHeader(t('preview_mode_title'))
+
+      .addWidget(CardService.newSelectionInput()
+        .setType(CardService.SelectionInputType.CHECK_BOX)
+        .setTitle(t('preview_mode_label'))
+        .setFieldName('preview_mode')
+        .addItem(t('preview_mode_enable'), 'true', (PropertiesService.getUserProperties().getProperty('chrono_preview_mode') === 'true')))
+
+      .addWidget(CardService.newTextButton()
+        .setText(t('save_preferences'))
+        .setOnClickAction(CardService.newAction()
+          .setFunctionName('savePreferences'))))
+
     // Dangerous operations
     .addSection(CardService.newCardSection()
       .setHeader('⚠️ Dangerous Operations')
@@ -1122,6 +1268,35 @@ function openSettings(e) {
     .setNavigation(CardService.newNavigation()
       .pushCard(card))
     .build();
+}
+
+/**
+ * Save Preferences (preview mode)
+ */
+function savePreferences(e) {
+  try {
+    var formInput = e.formInput || {};
+    var preview = formInput.preview_mode;
+    var enabled = false;
+    if (preview) {
+      if (Array.isArray(preview)) { enabled = preview.indexOf('true') !== -1; }
+      else { enabled = (preview === 'true'); }
+    }
+
+    PropertiesService.getUserProperties().setProperty('chrono_preview_mode', enabled ? 'true' : 'false');
+
+    return CardService.newActionResponseBuilder()
+      .setNotification(CardService.newNotification()
+        .setText(enabled ? '✅ Preview mode enabled' : '✅ Preview mode disabled'))
+      .setNavigation(CardService.newNavigation()
+        .updateCard(buildDashboardCard()[0]))
+      .build();
+  } catch (error) {
+    return CardService.newActionResponseBuilder()
+      .setNotification(CardService.newNotification()
+        .setText('❌ Save failed: ' + error.message))
+      .build();
+  }
 }
 
 /**
@@ -1380,6 +1555,25 @@ function buildTriggerStatusWidget(status) {
 }
 
 /**
+ * Get Debug Mode Status (from UserProperties)
+ */
+function getDebugModeStatus() {
+  try {
+    var u = PropertiesService.getUserProperties();
+    var enabled = u.getProperty('chrono_debug_enabled') === 'true';
+    var lastEmail = u.getProperty('chrono_debug_last_email');
+    var enabledAt = u.getProperty('chrono_debug_enabled_at');
+    return {
+      enabled: enabled,
+      lastEmail: lastEmail ? parseInt(lastEmail, 10) : null,
+      enabledAt: enabledAt ? parseInt(enabledAt, 10) : null
+    };
+  } catch (e) {
+    return { enabled: false };
+  }
+}
+
+/**
  * Build Debug Mode Status Display Widget
  */
 function buildDebugStatusWidget(debugStatus) {
@@ -1542,6 +1736,122 @@ function getSourceLabel(source) {
     'heuristic': '🧠 Rule Match'
   };
   return labels[source] || source;
+}
+
+/**
+ * i18n helpers & navbar / why / CTA frequency (minimal inline impl)
+ */
+function getUserLocale() {
+  try { return (Session.getActiveUserLocale && Session.getActiveUserLocale()) || 'en'; } catch (e) { return 'en'; }
+}
+var I18N = {
+  en: {
+    home: 'Home', actions: 'Actions', settings: 'Settings', why: 'Why identified',
+    dashboard_title: 'Chrono Lite', dashboard_subtitle: 'Email Classification Statistics',
+    automation_status: 'Automation Status', status: 'Status', enabled: 'Enabled', disabled: 'Disabled',
+    today_stats: "Today's Statistics", processed: 'Processed', newsletter_unread: 'Newsletter Unread',
+    quick_actions: 'Quick Actions', manual_sync: 'Manual Sync Inbox', trigger_auto: 'Trigger Auto Scan (Debug)',
+    enable_debug: '🐛 Enable Debug Mode', disable_debug: '🐛 Disable Debug Mode', update_db: 'Update Sender Database', clear_test_labels: 'Clear Test Labels',
+    settings_help: 'Settings & Help', settings_btn: 'Settings', help_feedback: 'Help & Feedback',
+    onboarding_title: 'Welcome to Chrono Lite', onboarding_subtitle: 'Gmail Inbox Automation Assistant',
+    onboarding_qs: '3-Step Quick Start', onboarding_qs_1: '① Load sender database', onboarding_qs_2: '② Auto-classify test emails', onboarding_qs_3: '③ Enable automation workflow',
+    onboarding_bullets_tip: '✨ Inbox zero in just 3 minutes', onboarding_bullets_privacy: '🔒 Runs entirely in your Gmail', onboarding_bullets_db: '📊 Supports 5000+ Newsletter recognition',
+    op_instructions: 'Operation Instructions', op_instructions_body: '<b>Initialization will perform the following operations:</b><br><br>• Download and cache sender database (5000+ entries)<br>• Auto-classify 20 emails from the last 7 days<br>• Add Chrono labels to identified emails<br>• Archive/mark as read based on configuration<br><br><font color="#e67e22"><b>Note:</b> Some emails may be moved out of inbox</font><br><font color="#666666">You can <b>undo</b> on the email card if needed</font>',
+    start_init: '🚀 Start Initialization', start_preview: '🧪 Start in Preview Mode', custom_settings: '⚙️ Custom Settings', view_user_guide: '📖 View User Guide',
+    init_complete: 'Initialization Complete', init_processed_of: 'Processed {p}/{t} emails',
+    processing_results: 'Processing Results', none_found: 'No classifiable emails found', back_home: '← Back to Home', open_settings: '⚙️ Open Settings',
+    sync_complete: 'Sync Complete', unclassified: 'Unclassified', processing_details: 'Processing Details',
+    minimal_auto_tip: '✨ Automation enabled, no manual action needed', undo: '↩️ Undo',
+    identified_category: 'Identified Category', match_method: 'Match Method', confirm_apply: '✅ Confirm & Apply', incorrect: '❌ Incorrect',
+    unknown_sender: 'Unknown Sender', contrib_help: 'You can help improve Chrono Lite', what_is_this: 'What do you think this is:', submit_to_oss: '📤 Submit to Open Source Database',
+    long_article_tip: '💡 Long Article Tip', try_saas: '🚀 Try Chrono SaaS Free',
+    error_title: '❌ Error Occurred', error_message: '<b>Error Message:</b><br>{msg}', refresh: '🔄 Refresh',
+    whats_new_title: "What's New", whats_new_body: 'UI refreshed: faster actions, undo support, and smarter tips.', dismiss: 'Dismiss',
+    preview_mode_title: '🔧 Preferences', preview_mode_label: 'Preview Mode (labels only, no archive/read)', preview_mode_enable: 'Enable', save_preferences: '💾 Save Preferences', saved: '✅ Saved',
+    preview_enabled: '✅ Preview mode enabled', preview_disabled: '✅ Preview mode disabled', save_failed: '❌ Save failed: {msg}',
+    trigger_updated: '✅ Trigger updated to {label}', config_saved: '✅ Configuration saved'
+  },
+  zh_cn: {
+    home: '主页', actions: '操作', settings: '设置', why: '为什么被识别',
+    dashboard_title: 'Chrono Lite', dashboard_subtitle: '邮件分类统计',
+    automation_status: '自动化状态', status: '状态', enabled: '已启用', disabled: '未启用',
+    today_stats: '今日统计', processed: '已处理', newsletter_unread: 'Newsletter 未读',
+    quick_actions: '快捷操作', manual_sync: '手动同步收件箱', trigger_auto: '触发自动扫描（调试）',
+    enable_debug: '🐛 启用调试模式', disable_debug: '🐛 关闭调试模式', update_db: '更新发件人数据库', clear_test_labels: '清理测试标签',
+    settings_help: '设置与帮助', settings_btn: '设置', help_feedback: '帮助与反馈',
+    onboarding_title: '欢迎使用 Chrono Lite', onboarding_subtitle: 'Gmail 收件箱自动化助手',
+    onboarding_qs: '三步快速开始', onboarding_qs_1: '① 加载发件人数据库', onboarding_qs_2: '② 自动分类测试邮件', onboarding_qs_3: '③ 启用自动化流程',
+    onboarding_bullets_tip: '✨ 3 分钟内看到效果', onboarding_bullets_privacy: '🔒 完全运行在你的 Gmail 账户', onboarding_bullets_db: '📊 识别 5000+ Newsletter',
+    op_instructions: '操作说明', op_instructions_body: '<b>初始化将执行以下操作：</b><br><br>• 下载并缓存发件人数据库（5000+）<br>• 自动分类最近 7 天 20 封邮件<br>• 为识别的邮件添加 Chrono 标签<br>• 按配置进行归档/标记已读<br><br><font color="#e67e22"><b>注意：</b>部分邮件可能移出收件箱</font><br><font color="#666666">如需还原，可在邮件卡片中<b>撤销</b></font>',
+    start_init: '🚀 开始初始化', start_preview: '🧪 以预览模式开始', custom_settings: '⚙️ 自定义设置', view_user_guide: '📖 查看使用指南',
+    init_complete: '初始化完成', init_processed_of: '已处理 {p}/{t} 封邮件',
+    processing_results: '处理结果', none_found: '未找到可分类的邮件', back_home: '← 返回首页', open_settings: '⚙️ 打开设置',
+    sync_complete: '同步完成', unclassified: '未分类', processing_details: '处理详情',
+    minimal_auto_tip: '✨ 自动化已启用，无需手动操作', undo: '↩️ 撤销',
+    identified_category: '识别的类别', match_method: '匹配方式', confirm_apply: '✅ 确认并执行', incorrect: '❌ 不正确',
+    unknown_sender: '未知发件人', contrib_help: '你可以帮助改进 Chrono Lite', what_is_this: '你认为这是：', submit_to_oss: '📤 提交到开源数据库',
+    long_article_tip: '💡 长文提示', try_saas: '🚀 免费试用 Chrono SaaS',
+    error_title: '❌ 发生错误', error_message: '<b>错误信息：</b><br>{msg}', refresh: '🔄 刷新',
+    whats_new_title: '新版本说明', whats_new_body: 'UI 焕新：更快的操作、撤销支持与更智能的提示。', dismiss: '忽略',
+    preview_mode_title: '🔧 偏好', preview_mode_label: '预览模式（仅打标，不归档/不改已读）', preview_mode_enable: '启用', save_preferences: '💾 保存偏好', saved: '✅ 已保存',
+    preview_enabled: '✅ 已开启预览模式', preview_disabled: '✅ 已关闭预览模式', save_failed: '❌ 保存失败：{msg}',
+    trigger_updated: '✅ 触发器已更新为 {label}', config_saved: '✅ 配置已保存'
+  }
+};
+function t(key) {
+  var loc = (getUserLocale() || 'en').toLowerCase();
+  var lang = I18N[loc] ? loc : (loc.indexOf('zh') === 0 ? 'zh_cn' : 'en');
+  return (I18N[lang] && I18N[lang][key]) || (I18N.en[key] || key);
+}
+// buildNavBar removed per design (no pseudo tabs)
+function buildWhySection(result) {
+  var features = (result && result.features) ? result.features : [];
+  if (!features.length) features = [];
+  var text = features.map(function(f){ return '• ' + f; }).join('<br>');
+  return CardService.newCardSection()
+    .setHeader(t('why'))
+    .setCollapsible(true)
+    .setNumUncollapsibleWidgets(0)
+    .addWidget(CardService.newTextParagraph().setText('<font color="#666666">' + (text || '-') + '</font>'));
+}
+function shouldShowLongArticleCTA() {
+  try {
+    var props = PropertiesService.getUserProperties();
+    var raw = props.getProperty('cta_long_article');
+    var data = raw ? JSON.parse(raw) : { ts: 0, count: 0 };
+    var now = Date.now();
+    if (now - data.ts > 7 * 24 * 3600 * 1000) data = { ts: now, count: 0 };
+    if (data.count >= 3) return false;
+    data.count += 1; data.ts = now; props.setProperty('cta_long_article', JSON.stringify(data));
+    return true;
+  } catch (e) { return false; }
+}
+
+function shouldShowWhatsNew() {
+  try {
+    var props = PropertiesService.getUserProperties();
+    var raw = props.getProperty('ui_whats_new');
+    var data = raw ? JSON.parse(raw) : { ts: 0, count: 0 };
+    var now = Date.now();
+    if (now - data.ts > 30 * 24 * 3600 * 1000) data = { ts: now, count: 0 };
+    if (data.count >= 1) return false; // show at most once per 30 days
+    data.count += 1; data.ts = now; props.setProperty('ui_whats_new', JSON.stringify(data));
+    return true;
+  } catch (e) { return false; }
+}
+
+function dismissWhatsNew(e) {
+  try {
+    // No-op, frequency already increased in shouldShowWhatsNew
+    return CardService.newActionResponseBuilder()
+      .setNotification(CardService.newNotification().setText('✅ Dismissed'))
+      .setNavigation(CardService.newNavigation().updateCard(buildDashboardCard()[0]))
+      .build();
+  } catch (error) {
+    return CardService.newActionResponseBuilder()
+      .setNotification(CardService.newNotification().setText('❌ Failed'))
+      .build();
+  }
 }
 
 /**

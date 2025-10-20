@@ -147,11 +147,11 @@ Story Goal
 Independent Test Criteria（非任务）
 - 自动回复/退信样本被静默处理且可回溯。
 
-T018: 系统自动回复识别与处理（巩固 L0）
+T018: [X] 系统自动回复识别与处理（巩固 L0）
 - Path: `/Users/darrenma/Documents/chrono-lite/src/Classifier.gs`
 - Action: 基于 `Auto-Submitted`, `Precedence`（bulk/list）；直接归 `System/Auto-Replies`；确保与其他规则不冲突。
 
-T019: 降噪策略应用（系统类） [P]
+T019: [X] 降噪策略应用（系统类） [P]
 - Path: `/Users/darrenma/Documents/chrono-lite/src/Actions.gs`
 - Action: 套用系统类默认策略（可配置），不跳过收件箱但弱提示；可被标签查阅回溯。
 
@@ -167,11 +167,11 @@ Story Goal
 Independent Test Criteria（非任务）
 - 任一样本可看到标签、命中特征摘要与裁决理由。
 
-T020: 分类结果结构扩展（返回解释字段）
+T020: [X] 分类结果结构扩展（返回解释字段）
 - Path: `/Users/darrenma/Documents/chrono-lite/src/Classifier.gs`
 - Action: 将 `classifyEmail`/`classifyBatch` 返回结构中加入 `{method, features[], finalCategory, appliedPolicy}`；与 Logger 对齐。
 
-T021: 结构化日志集成
+T021: [X] 结构化日志集成
 - Path: `/Users/darrenma/Documents/chrono-lite/src/Logger.gs`
 - Action: 使用 T006 的 `logDecisionSummary` 输出来源层级、命中特征、阈值、最终决策与动作策略；遵循默认低粒度策略。
 
@@ -181,15 +181,15 @@ Checkpoint: US5 完成。
 
 ### Phase 8 — Polish & Cross-Cutting
 
-T022: 批处理与 API 调用优化 [P]
+T022: [X] 批处理与 API 调用优化 [P]
 - Path: `/Users/darrenma/Documents/chrono-lite/src/Classifier.gs`
 - Action: 优化 `classifyBatch`：一次性提取常用元数据；仅在 L1/L2 失败时读取昂贵头部；复用会话级缓存。
 
-T023: 灰度与开关校验 [P]
+T023: [X] 灰度与开关校验 [P]
 - Path: `/Users/darrenma/Documents/chrono-lite/src/Config.gs`
 - Action: 验证 `FEATURE_FLAGS` 的默认值与灰度发布路径；确保默认保守策略。
 
-T024: 未命中处理与安全护栏
+T024: [X] 未命中处理与安全护栏
 - Path: `/Users/darrenma/Documents/chrono-lite/src/Actions.gs`
 - Action: 对未命中的邮件仅打 `Chrono/Uncategorized`；确保任何高优先场景不得被降噪。
 

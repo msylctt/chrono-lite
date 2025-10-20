@@ -32,6 +32,14 @@ function applyCategory(thread, categoryName) {
   var config = CATEGORIES[categoryName];
   // 2) 新策略映射（CATEGORY_POLICIES）用于决定是否保留收件箱/加星/已读/到期归档占位
   var policy = (typeof CATEGORY_POLICIES !== 'undefined') ? CATEGORY_POLICIES[categoryName] : null;
+  // 3) 预览模式（仅打标不归档/不改已读），用户可在设置中开启
+  var previewEnabled = false;
+  try {
+    if (typeof UI_FLAGS !== 'undefined' && UI_FLAGS.enablePreviewMode) {
+      var uprops = PropertiesService.getUserProperties();
+      previewEnabled = (uprops.getProperty('chrono_preview_mode') === 'true');
+    }
+  } catch (ePrev) { previewEnabled = false; }
 
   if (!config) {
     Log.warn(Log.Module.ACTION, 'Unknown category', {category: categoryName});
@@ -54,18 +62,18 @@ function applyCategory(thread, categoryName) {
     var shouldArchive = false;
     if (config.action === 'archive') shouldArchive = true;
     if (policy && policy.keepInbox === false) shouldArchive = true;
+    if (previewEnabled) {
+      // 预览模式：不归档
+      shouldArchive = false;
+    }
     if (shouldArchive) thread.moveToArchive();
 
-    // 3. 标记已读
-    if (config.markRead || (policy && policy.markRead)) {
+    // 3. 标记已读（预览模式下不修改已读状态）
+    if (!previewEnabled && (config.markRead || (policy && policy.markRead))) {
       thread.markRead();
     }
 
-    // 4. 标记已处理，避免重复扫描
-    try {
-      var processed = getOrCreateLabel(PROCESSED_LABEL);
-      if (processed) thread.addLabel(processed);
-    } catch (e2) { /* ignore */ }
+    // 4. 去除“已处理”显式标签；分类即处理，不额外加 Processed
 
     Log.debug(Log.Module.ACTION, 'Category applied', {
       thread_id: threadId,
@@ -94,6 +102,42 @@ function applyCategory(thread, categoryName) {
       category: categoryName,
       error: error.message
     });
+    return false;
+  }
+}
+
+/**
+ * 撤销分类（移除标签并移回收件箱，可选）
+ * @param {string} threadId GmailThread.getId()
+ * @param {string} categoryName 分类名称（用于找到对应标签）
+ */
+function undoApply(threadId, categoryName) {
+  try {
+    var thread = GmailApp.getThreadById(threadId);
+    if (!thread) return false;
+
+    var config = CATEGORIES[categoryName];
+    if (config && config.label) {
+      var label = GmailApp.getUserLabelByName(config.label);
+      if (label) {
+        try { thread.removeLabel(label); } catch (e1) { /* ignore */ }
+      }
+    }
+
+    // 移除处理标记
+    try {
+      var seen = GmailApp.getUserLabelByName(SEEN_LABEL);
+      if (seen) thread.removeLabel(seen);
+    } catch (e2) { /* ignore */ }
+
+    // 移回收件箱（即便之前未归档也安全）
+    try { thread.moveToInbox(); } catch (e3) { /* ignore */ }
+
+    Log.info(Log.Module.ACTION, 'Undo applied', { thread_id: threadId, category: categoryName });
+    return true;
+
+  } catch (error) {
+    Log.error(Log.Module.ACTION, 'Undo failed', { thread_id: threadId, error: error.message });
     return false;
   }
 }

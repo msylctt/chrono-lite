@@ -21,6 +21,36 @@ function shouldLogSample() {
 }
 
 /**
+ * 获取动作策略（用于解释性输出）
+ */
+function getAppliedPolicy(category) {
+  try {
+    return (typeof CATEGORY_POLICIES !== 'undefined' && CATEGORY_POLICIES[category]) ? CATEGORY_POLICIES[category] : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * 输出决策摘要（结构化）
+ */
+function emitDecisionSummary(message, layer, method, features, score, threshold, category) {
+  try {
+    var messageId;
+    try { messageId = message && message.getId ? message.getId() : undefined; } catch (e) { messageId = undefined; }
+    Log.logDecisionSummary({
+      messageId: messageId,
+      layer: layer,
+      matchedSignals: features || [],
+      score: typeof score === 'number' ? score : undefined,
+      threshold: typeof threshold === 'number' ? threshold : undefined,
+      finalCategory: category,
+      actionPolicy: getAppliedPolicy(category)
+    });
+  } catch (e) { /* ignore */ }
+}
+
+/**
  * 测试辅助：构造模拟 GmailMessage
  */
 function makeMockMessage(from, subject, headers) {
@@ -396,7 +426,16 @@ function classifyEmail(message) {
   // L0: 系统自动回复前置排除（Auto-Submitted 存在且非 no）
   try {
     var autoSubmittedL0 = message.getHeader && message.getHeader('Auto-Submitted');
-    if (autoSubmittedL0 && /^(?!no$).+/i.test((autoSubmittedL0 + '').trim())) {
+    var precedenceL0 = message.getHeader && message.getHeader('Precedence');
+    var subjectL0 = '';
+    try { subjectL0 = (message.getSubject() || '').toLowerCase(); } catch (e0) { subjectL0 = ''; }
+    var isBounceOrOoo = /(out of office|auto[- ]?reply|autoreply|delivery status notification|mail delivery|undelivered|returned mail|mailer-daemon|退信|自动回复)/i.test(subjectL0);
+
+    if (
+      (autoSubmittedL0 && /^(?!no$).+/i.test((autoSubmittedL0 + '').trim())) ||
+      (precedenceL0 && /auto_reply/i.test(precedenceL0)) ||
+      isBounceOrOoo
+    ) {
       if (shouldLogSample()) {
         Log.info(Log.Module.CLASSIFIER, 'classified (auto-reply/L0)', {
           layer: 'L0',
@@ -409,7 +448,7 @@ function classifyEmail(message) {
       return {
         category: 'System/Auto-Replies',
         source: 'heuristic',
-        method: 'auto_submitted'
+        method: 'auto_reply_or_bounce'
       };
     }
   } catch (eL0) { /* ignore */ }
@@ -448,6 +487,11 @@ function classifyEmail(message) {
         domain: normDomain
       });
     }
+    emitDecisionSummary(message, 'L1', exactResult.method, [], undefined, undefined, exactResult.category);
+    var policy1 = getAppliedPolicy(exactResult.category);
+    exactResult.finalCategory = exactResult.category;
+    exactResult.appliedPolicy = policy1;
+    exactResult.features = exactResult.features || [];
     return exactResult;
   }
 
@@ -463,6 +507,11 @@ function classifyEmail(message) {
         domain: normDomain
       });
     }
+    emitDecisionSummary(message, 'L2', domainResult.method, [], undefined, undefined, domainResult.category);
+    var policy2 = getAppliedPolicy(domainResult.category);
+    domainResult.finalCategory = domainResult.category;
+    domainResult.appliedPolicy = policy2;
+    domainResult.features = domainResult.features || [];
     return domainResult;
   }
 
@@ -478,6 +527,11 @@ function classifyEmail(message) {
         domain: normDomain
       });
     }
+    emitDecisionSummary(message, 'S1', securityResult.method, [], undefined, undefined, securityResult.category);
+    var policyS = getAppliedPolicy(securityResult.category);
+    securityResult.finalCategory = securityResult.category;
+    securityResult.appliedPolicy = policyS;
+    securityResult.features = securityResult.features || [];
     return securityResult;
   }
 
@@ -493,6 +547,11 @@ function classifyEmail(message) {
         domain: normDomain
       });
     }
+    emitDecisionSummary(message, 'C1', commerceResult.method, [], undefined, undefined, commerceResult.category);
+    var policyC = getAppliedPolicy(commerceResult.category);
+    commerceResult.finalCategory = commerceResult.category;
+    commerceResult.appliedPolicy = policyC;
+    commerceResult.features = commerceResult.features || [];
     return commerceResult;
   }
 
@@ -506,6 +565,11 @@ function classifyEmail(message) {
         category: travelResult.category
       });
     }
+    emitDecisionSummary(message, 'T1', travelResult.method, [], undefined, undefined, travelResult.category);
+    var policyT = getAppliedPolicy(travelResult.category);
+    travelResult.finalCategory = travelResult.category;
+    travelResult.appliedPolicy = policyT;
+    travelResult.features = travelResult.features || [];
     return travelResult;
   }
 
@@ -523,6 +587,11 @@ function classifyEmail(message) {
         domain: normDomain
       });
     }
+    emitDecisionSummary(message, 'L3', heuristicResult.method, heuristicResult.features || [], heuristicResult.score, CLASSIFIER_THRESHOLD, heuristicResult.category);
+    var policyH = getAppliedPolicy(heuristicResult.category);
+    heuristicResult.finalCategory = heuristicResult.category;
+    heuristicResult.appliedPolicy = policyH;
+    heuristicResult.features = heuristicResult.features || [];
     // 写回信誉（高置信度）
     if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.enableReputation) {
       var repKey2 = normalized.split('@')[1] || normalized;
@@ -532,7 +601,21 @@ function classifyEmail(message) {
     return heuristicResult;
   }
 
-  return null; // 无法分类
+  // 无法分类 → Uncategorized（Phase 8）
+  try {
+    var uncPolicySingle = getAppliedPolicy('Uncategorized');
+    emitDecisionSummary(message, 'F0', 'uncategorized', [], undefined, undefined, 'Uncategorized');
+    return {
+      category: 'Uncategorized',
+      source: 'fallback',
+      method: 'uncategorized',
+      finalCategory: 'Uncategorized',
+      appliedPolicy: uncPolicySingle,
+      features: []
+    };
+  } catch (e) {
+    return null;
+  }
 }
 
 /**
@@ -612,7 +695,14 @@ function classifyBatch(messages) {
   // 4. 批量域名匹配查询
   var domainResults = {};
   if (domainQueries.length > 0) {
-    domainResults = queryBatch(domainQueries);
+    // 去重查询，减少批量请求体积（Phase 8 优化）
+    var seen = {};
+    var uniqueQueries = [];
+    for (var uq = 0; uq < domainQueries.length; uq++) {
+      var q = domainQueries[uq];
+      if (!seen[q]) { seen[q] = true; uniqueQueries.push(q); }
+    }
+    domainResults = queryBatch(uniqueQueries);
   }
 
   // 5. 批量获取必要头部（仅对需要启发式规则的邮件）
@@ -663,12 +753,17 @@ function classifyBatch(messages) {
 
     // Level 1: 精确匹配
     if (exactResult) {
+      var policyB1 = getAppliedPolicy(exactResult.category);
       results.push({
         message: msg,
         category: exactResult.category,
         source: 'database_exact',
-        method: 'exact_match'
+        method: 'exact_match',
+        finalCategory: exactResult.category,
+        appliedPolicy: policyB1,
+        features: []
       });
+      emitDecisionSummary(msg, 'L1', 'exact_match', [], undefined, undefined, exactResult.category);
       if (shouldLogSample()) {
         Log.debug(Log.Module.CLASSIFIER, 'classified (exact/batch)', {
           layer: 'L1',
@@ -698,12 +793,17 @@ function classifyBatch(messages) {
       for (var p = 0; p < patterns.length; p++) {
         var dr = domainResults[patterns[p]];
         if (dr) {
+          var policyB2 = getAppliedPolicy(dr.category);
           results.push({
             message: msg,
             category: dr.category,
             source: 'database_domain',
-            method: 'domain_match'
+            method: 'domain_match',
+            finalCategory: dr.category,
+            appliedPolicy: policyB2,
+            features: []
           });
+          emitDecisionSummary(msg, 'L2', 'domain_match', [], undefined, undefined, dr.category);
         if (shouldLogSample()) {
           Log.debug(Log.Module.CLASSIFIER, 'classified (domain/batch)', {
             layer: 'L2',
@@ -722,12 +822,17 @@ function classifyBatch(messages) {
     // Level 3: 启发式规则（批量处理）
     var heuristicResult = applyBatchHeuristics(m);
     if (heuristicResult) {
+      var policyBH = getAppliedPolicy(heuristicResult.category);
       results.push({
         message: msg,
         category: heuristicResult.category,
         source: 'heuristic',
-        method: heuristicResult.method
+        method: heuristicResult.method,
+        finalCategory: heuristicResult.category,
+        appliedPolicy: policyBH,
+        features: []
       });
+      emitDecisionSummary(msg, 'L3', heuristicResult.method, heuristicResult.features || [], heuristicResult.score, CLASSIFIER_THRESHOLD, heuristicResult.category);
       if (shouldLogSample()) {
         Log.debug(Log.Module.CLASSIFIER, 'classified (heuristic/batch)', {
           layer: 'L3',
@@ -746,11 +851,18 @@ function classifyBatch(messages) {
       continue;
     }
 
-    // 无法分类
+    // 无法分类 → Uncategorized（Phase 8）
+    var uncPolicy = getAppliedPolicy('Uncategorized');
     results.push({
       message: msg,
-      result: null
+      category: 'Uncategorized',
+      source: 'fallback',
+      method: 'uncategorized',
+      finalCategory: 'Uncategorized',
+      appliedPolicy: uncPolicy,
+      features: []
     });
+    emitDecisionSummary(msg, 'F0', 'uncategorized', [], undefined, undefined, 'Uncategorized');
   }
 
   return results;
@@ -1128,7 +1240,33 @@ function runPhase2Tests() {
         // monkey-patch body accessors for mock
         m.getPlainBody = function(){ return body; };
         return m;
-      })()
+      })(),
+
+      // 安全/验证码：主题命中
+      makeMockMessage('Security <no-reply@service.example>', 'Your verification code', { }),
+
+      // 安全/验证码：正文前 2KB 抽取验证码
+      (function(){
+        var body = 'Dear user, your code: 123456. Do not share it with anyone.';
+        var m = makeMockMessage('Security <auth@bank.example>', 'Important account notice', {});
+        m.getPlainBody = function(){ return body; };
+        return m;
+      })(),
+
+      // 订单：主题命中
+      makeMockMessage('Orders <sales@shop.example>', 'Order Confirmation #A123', { }),
+
+      // 物流：主题命中
+      makeMockMessage('Shipping <notify@carrier.example>', 'Your package shipping update', { }),
+
+      // 账单：主题命中
+      makeMockMessage('Billing <invoice@saas.example>', 'Invoice for August', { }),
+
+      // 航班：主题命中
+      makeMockMessage('Airline <updates@air.example>', 'Your flight itinerary', { }),
+
+      // 酒店：主题命中
+      makeMockMessage('Hotel <booking@hotel.example>', 'Hotel reservation confirmed', { })
     ];
 
     var syntheticResults = syntheticMessages.map(function(m){ return classifyEmail(m); });

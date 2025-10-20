@@ -22,8 +22,8 @@ function autoProcessInbox() {
     var now = new Date().toISOString();
     userProps.setProperty('chrono_last_run', now);
 
-    // 处理最近 1 天的新邮件（避免漏掉），跳过已处理标签
-    var query = 'in:inbox newer_than:1d -label:"' + PROCESSED_LABEL + '"';
+    // 处理最近 1 天的新邮件（避免漏掉），跳过系统“已看过”标签（未分类缓存）
+    var query = 'in:inbox newer_than:1d -label:"' + SEEN_LABEL + '"';
     var threads = GmailApp.search(query, 0, 100);
 
     if (threads.length === 0) {
@@ -52,6 +52,17 @@ function autoProcessInbox() {
           processed++;
           categoryStats[result.category] = (categoryStats[result.category] || 0) + 1;
         }
+        // 未分类：打上 System/Seen，结合 TTL 作为短期跳过标记
+        else {
+          try {
+            var seenLabel = GmailApp.getUserLabelByName(SEEN_LABEL) || GmailApp.createLabel(SEEN_LABEL);
+            thread.addLabel(seenLabel);
+            // 记录 TTL 时间戳
+            var props = PropertiesService.getUserProperties();
+            var key = 'seen:' + thread.getId();
+            props.setProperty(key, '' + Date.now());
+          } catch (eSeen) { /* ignore */ }
+        }
       } catch (error) {
         failed++;
         Log.error(Log.Module.TRIGGER, 'Failed to process thread', {
@@ -64,6 +75,28 @@ function autoProcessInbox() {
 
     // 记录处理数量
     userProps.setProperty('chrono_last_processed', processed.toString());
+
+    // 清理过期的 System/Seen（TTL）
+    try {
+      var propsClean = PropertiesService.getUserProperties();
+      var allProps = propsClean.getProperties();
+      var now = Date.now();
+      var ttlMs = (SEEN_TTL_DAYS || 7) * 24 * 60 * 60 * 1000;
+      var seenLabelClean = GmailApp.getUserLabelByName(SEEN_LABEL);
+      for (var k in allProps) {
+        if (allProps.hasOwnProperty(k) && k.indexOf('seen:') === 0) {
+          var ts = parseInt(allProps[k], 10) || 0;
+          if (ts && (now - ts) > ttlMs) {
+            var threadId = k.substring(5);
+            try {
+              var th = GmailApp.getThreadById(threadId);
+              if (th && seenLabelClean) th.removeLabel(seenLabelClean);
+            } catch (eRm) { /* ignore */ }
+            try { propsClean.deleteProperty(k); } catch (eDel) { /* ignore */ }
+          }
+        }
+      }
+    } catch (eTTL) { /* ignore */ }
 
     op.success({
       found: threads.length,
@@ -98,8 +131,8 @@ function initialSetup() {
       version: meta.version
     });
 
-    // 2. 处理最近 7 天邮件（快速模式），跳过已处理标签
-    var query = 'in:inbox newer_than:7d -label:"' + PROCESSED_LABEL + '"';
+    // 2. 处理最近 7 天邮件（快速模式），跳过系统“已看过”标签（未分类缓存）
+    var query = 'in:inbox newer_than:7d -label:"' + SEEN_LABEL + '"';
     var threads = GmailApp.search(query, 0, 100);
 
     Log.info(Log.Module.INIT, 'Scanning inbox', {
@@ -123,6 +156,14 @@ function initialSetup() {
           applyCategory(thread, result.category);
           stats.processed++;
           stats.byCategory[result.category] = (stats.byCategory[result.category] || 0) + 1;
+        }
+        else {
+          try {
+            var seenLabel2 = GmailApp.getUserLabelByName(SEEN_LABEL) || GmailApp.createLabel(SEEN_LABEL);
+            thread.addLabel(seenLabel2);
+            var props2 = PropertiesService.getUserProperties();
+            props2.setProperty('seen:' + thread.getId(), '' + Date.now());
+          } catch (eSeen2) { /* ignore */ }
         }
       } catch (error) {
         stats.failed++;

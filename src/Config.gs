@@ -47,6 +47,22 @@ const CATEGORIES = {
     action: 'keep_inbox',
     markRead: false,
     addStar: true
+  },
+
+  // US4（系统自动回复/退信）
+  'System/Auto-Replies': {
+    label: 'Chrono/System',
+    action: 'keep_inbox',
+    markRead: false,
+    addStar: false
+  },
+
+  // Phase 8（未命中）
+  'Uncategorized': {
+    label: 'Chrono/Uncategorized',
+    action: 'keep_inbox',
+    markRead: false,
+    addStar: false
   }
 };
 
@@ -60,6 +76,12 @@ const TEST_EMAIL_COUNT = 10;       // 测试邮件数量
  * 处理标记（避免重复扫描）
  */
 const PROCESSED_LABEL = 'Chrono/Processed';
+
+/**
+ * 系统状态标签与 TTL
+ */
+const SEEN_LABEL = 'Chrono/System/Seen';
+const SEEN_TTL_DAYS = 7; // 未分类的“已看过”缓存时间
 
 /**
  * 全局日志级别（默认 INFO）。可被用户属性 chrono_log_level 覆盖
@@ -76,6 +98,17 @@ const FEATURE_FLAGS = {
   enableReputation: false,      // Phase C: 本地信誉缓存
   enableContent: true,          // Phase D: 轻量内容启发式
   enableScoring: true           // Phase E: 评分与阈值
+};
+
+/**
+ * UI 特性开关（渐进式发布）
+ */
+const UI_FLAGS = {
+  enableNavBar: true,        // 顶部伪 Tab 导航
+  enableWhySection: true,    // 在上下文卡显示“为什么被识别”
+  enableUndo: true,          // 支持撤销入口
+  enablePreviewMode: true,   // 允许在设置中开启“仅打标不归档”
+  enableWhatsNew: false      // 可选：新版本说明卡片
 };
 
 /**
@@ -165,7 +198,13 @@ const CATEGORY_POLICIES = {
   'Finance/Security': { keepInbox: true,  markRead: false, addStar: false, autoArchiveRule: { days: 1 } },
   'Purchases/Orders': { keepInbox: true,  markRead: false, addStar: false, autoArchiveRule: { days: 30 } },
   'Purchases/Shipping': { keepInbox: true, markRead: false, addStar: false, autoArchiveRule: { days: 7 } },
-  'Finance/Bills': { keepInbox: true,    markRead: false, addStar: false, autoArchiveRule: { days: 60 } }
+  'Finance/Bills': { keepInbox: true,    markRead: false, addStar: false, autoArchiveRule: { days: 60 } },
+
+  // US4（系统自动回复/退信）
+  'System/Auto-Replies': { keepInbox: true, markRead: false, addStar: false, autoArchiveRule: null },
+
+  // Phase 8（未命中）
+  'Uncategorized': { keepInbox: true, markRead: false, addStar: false, autoArchiveRule: null }
 };
 
 /**

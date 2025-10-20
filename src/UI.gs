@@ -1054,19 +1054,27 @@ function openSettings(e) {
       .setTitle('⚙️ Settings')
       .setSubtitle('Configure Chrono Lite'))
 
-    // Database information
+    // Categories & Actions (Configurable)
     .addSection(CardService.newCardSection()
-      .setHeader('📊 Database Status')
+      .setHeader('📁 Categories & Actions (Configurable)')
+
+      .addWidget(CardService.newTextParagraph()
+        .setText('<font color="#666666">Configure automatic actions per category (Archive/Keep, Mark as read, Star).<br>' +
+                 'Changes apply to newly processed emails.</font>'))
+
+      .addWidget(CardService.newTextButton()
+        .setText('Configure Category Actions')
+        .setOnClickAction(CardService.newAction()
+          .setFunctionName('viewCategories'))))
+
+    // Data Source (Read-Only)
+    .addSection(CardService.newCardSection()
+      .setHeader('📊 Data Source (Read-Only)')
 
       .addWidget(CardService.newKeyValue()
         .setTopLabel('Current Database')
         .setContent(dbInfo)
-        .setIcon(CardService.Icon.DESCRIPTION))
-
-      .addWidget(CardService.newTextButton()
-        .setText('View Category List')
-        .setOnClickAction(CardService.newAction()
-          .setFunctionName('viewCategories'))))
+        .setIcon(CardService.Icon.DESCRIPTION)))
 
     // Automation trigger settings
     .addSection(CardService.newCardSection()
